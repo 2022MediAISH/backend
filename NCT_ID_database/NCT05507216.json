@@ -1,0 +1,89 @@
+{
+    "Allocation": "Randomized",
+    "CompleteTime": 21,
+    "DesignModel": "Parallel Assignment",
+    "DrugInformation": {
+        "ArmGroupList": [
+            {
+                "ArmGroupDescription": "abx464: 50  mg  , ",
+                "ArmGroupLabel": "ABX464 50mg",
+                "ArmGroupType": "Experimental",
+                "InterventionDescription": [
+                    {
+                        "Dosage": "50mg",
+                        "DrugName": "abx464",
+                        "Duration": "",
+                        "HowToTake": "",
+                        "OtherName": [
+                            "Obefazimod"
+                        ]
+                    }
+                ],
+                "InterventionList": {
+                    "ArmGroupInterventionName": [
+                        "drug: abx464"
+                    ]
+                }
+            },
+            {
+                "ArmGroupDescription": "abx464: 50  mg  , ",
+                "ArmGroupLabel": "ABX464 25mg",
+                "ArmGroupType": "Experimental",
+                "InterventionDescription": [
+                    {
+                        "Dosage": "25mg",
+                        "DrugName": "abx464",
+                        "Duration": "",
+                        "HowToTake": "",
+                        "OtherName": [
+                            "Obefazimod"
+                        ]
+                    }
+                ],
+                "InterventionList": {
+                    "ArmGroupInterventionName": [
+                        "drug: abx464"
+                    ]
+                }
+            },
+            {
+                "ArmGroupDescription": "placebo: 50  mg  , ",
+                "ArmGroupLabel": "Placebo",
+                "ArmGroupType": "Placebo Comparator",
+                "InterventionDescription": [
+                    {
+                        "Dosage": "50  mg",
+                        "DrugName": "placebo",
+                        "Duration": "",
+                        "HowToTake": "",
+                        "OtherName": []
+                    }
+                ],
+                "InterventionList": {
+                    "ArmGroupInterventionName": [
+                        "drug: placebo"
+                    ]
+                }
+            }
+        ]
+    },
+    "Enrollment": "612",
+    "InterventionName": "Placebo",
+    "Masking": "Triple",
+    "NCTID": "NCT05507216",
+    "Objective": "ABTECT-2 - ABX464 Treatment Evaluation for Ulcerative Colitis Therapy -2",
+    "OfficialTitle": "A Randomized, Double-blind, Placebo-controlled, Multicenter Phase III Study to Evaluate the Efficacy and Safety of ABX464 Once Daily for Induction Treatment in Subjects With Moderately to Severely Active Ulcerative Colitis",
+    "PopulationBox": {
+        "Condition": "Ulcerative Colitis",
+        "Gender": "All",
+        "HealthyCondition": "No",
+        "MaxAge": "",
+        "MinAge": "16 Years",
+        "Participant": "612"
+    },
+    "PopulationRatio": "",
+    "Title": "ABTECT-2 - ABX464 Treatment Evaluation for Ulcerative Colitis Therapy -2",
+    "WashoutPeriod": "",
+    "_id": "NCT05507216",
+    "version": "1.7.1"
+}

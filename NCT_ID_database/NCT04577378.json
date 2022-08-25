@@ -1,0 +1,83 @@
+{
+    "Allocation": "Randomized",
+    "CompleteTime": 1,
+    "DesignModel": "Sequential Assignment",
+    "DrugInformation": {
+        "ArmGroupList": [
+            {
+                "ArmGroupDescription": "isotretinoin(aerosolized 13 cis retinoic acid):   , aerosolized itraconazole: 5mg 14 days inhaled, ",
+                "ArmGroupLabel": "13 cis retinoic acid doses orally",
+                "ArmGroupType": "Active Comparator",
+                "InterventionDescription": [
+                    {
+                        "Dosage": "",
+                        "DrugName": "isotretinoin(aerosolized 13 cis retinoic acid)",
+                        "Duration": "",
+                        "HowToTake": "",
+                        "OtherName": []
+                    },
+                    {
+                        "Dosage": "5mg",
+                        "DrugName": "aerosolized itraconazole",
+                        "Duration": "14 days",
+                        "HowToTake": "inhaled",
+                        "OtherName": []
+                    }
+                ],
+                "InterventionList": {
+                    "ArmGroupInterventionName": [
+                        "drug: isotretinoin(aerosolized 13 cis retinoic acid)",
+                        "drug: aerosolized itraconazole"
+                    ]
+                }
+            },
+            {
+                "ArmGroupDescription": "isotretinoin(aerosolized 13 cis retinoic acid):   , ",
+                "ArmGroupLabel": "Aerosolized 13 cis retinoic acid",
+                "ArmGroupType": "Sham Comparator",
+                "InterventionDescription": [
+                    {
+                        "Dosage": "",
+                        "DrugName": "isotretinoin(aerosolized 13 cis retinoic acid)",
+                        "Duration": "",
+                        "HowToTake": "",
+                        "OtherName": []
+                    }
+                ],
+                "InterventionList": {
+                    "ArmGroupInterventionName": [
+                        "drug: isotretinoin(aerosolized 13 cis retinoic acid)"
+                    ]
+                }
+            },
+            {
+                "ArmGroupDescription": "",
+                "ArmGroupLabel": "control",
+                "ArmGroupType": "No Intervention",
+                "InterventionDescription": [],
+                "InterventionList": {
+                    "ArmGroupInterventionName": []
+                }
+            }
+        ]
+    },
+    "Enrollment": "45",
+    "InterventionName": "Itraconazole",
+    "Masking": "Single",
+    "NCTID": "NCT04577378",
+    "Objective": "Efficacy and Safety of Drug Combination Therapy of Isotretinoin and Some Antifungal Drugs as A Potential Aerosol Therapy for COVID-19 : An Innovative Therapeutic Approach COVID-19",
+    "OfficialTitle": "Efficacy and Safety of Drug Combination Therapy of Isotretinoin and Some Antifungal Drugs as A Potential Aerosol Therapy for COVID-19 : An Innovative Therapeutic Approach",
+    "PopulationBox": {
+        "Condition": "Covid19",
+        "Gender": "All",
+        "HealthyCondition": "No",
+        "MaxAge": "80 Years",
+        "MinAge": "15 Years",
+        "Participant": "45"
+    },
+    "PopulationRatio": "",
+    "Title": "Efficacy and Safety of Drug Combination Therapy of Isotretinoin and Some Antifungal Drugs as A Potential Aerosol Therapy for COVID-19 : An Innovative Therapeutic Approach COVID-19",
+    "WashoutPeriod": "",
+    "_id": "NCT04577378",
+    "version": "1.7.1"
+}

@@ -1,0 +1,69 @@
+{
+    "Allocation": "N/A",
+    "CompleteTime": 24,
+    "DesignModel": "Single Group Assignment",
+    "DrugInformation": {
+        "ArmGroupList": [
+            {
+                "ArmGroupDescription": "nab-paclitaxel: 260mg/m x 2 cycles , cisplatin: 75mg/m days 1-3 , afatinib: 30mg x 6 weeks(everyday) , ",
+                "ArmGroupLabel": "Treatment Cohort",
+                "ArmGroupType": "Experimental",
+                "InterventionDescription": [
+                    {
+                        "Dosage": "260mg/m",
+                        "DrugName": "nab-paclitaxel",
+                        "Duration": "x 2 cycles",
+                        "HowToTake": "",
+                        "OtherName": [
+                            "Albumin-bound paclitaxel",
+                            "Abraxane"
+                        ]
+                    },
+                    {
+                        "Dosage": "30mg",
+                        "DrugName": "afatinib",
+                        "Duration": "x 6 weeks(everyday)",
+                        "HowToTake": "",
+                        "OtherName": []
+                    },
+                    {
+                        "Dosage": "75mg / m",
+                        "DrugName": "cisplatin",
+                        "Duration": "days 1-3",
+                        "HowToTake": "",
+                        "OtherName": [
+                            "CDDP"
+                        ]
+                    }
+                ],
+                "InterventionList": {
+                    "ArmGroupInterventionName": [
+                        "drug: nab-paclitaxel",
+                        "drug: cisplatin",
+                        "drug: biological: tislelizumab",
+                        "drug: afatinib"
+                    ]
+                }
+            }
+        ]
+    },
+    "Enrollment": "28",
+    "InterventionName": "Cisplatin, Tislelizumab",
+    "Masking": "None (Open Label)",
+    "NCTID": "NCT05516589",
+    "Objective": "Neoadjuvant Chemotherapy, Tislelizumab With Afatinib for HNSCC",
+    "OfficialTitle": "Neoadjuvant Chemotherapy, Tislelizumab With Afatinib for the Treatment of Resectable Head and Neck Squamous Cell Carcinoma: A Single-Arm Phase 2 Trial (neoCHANCE-2 Trial)",
+    "PopulationBox": {
+        "Condition": "Head and Neck Squamous Cell Carcinoma",
+        "Gender": "All",
+        "HealthyCondition": "No",
+        "MaxAge": "",
+        "MinAge": "18 Years",
+        "Participant": "28"
+    },
+    "PopulationRatio": "",
+    "Title": "Neoadjuvant Chemotherapy, Tislelizumab With Afatinib for HNSCC",
+    "WashoutPeriod": "",
+    "_id": "NCT05516589",
+    "version": "1.7.1"
+}
