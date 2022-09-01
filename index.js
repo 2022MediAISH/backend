@@ -37,6 +37,7 @@ app.listen(port, () => {
 const spawn = require("child_process").spawn;
 
 app.get("/create/:NCTNO", (req, res) => {});
+// // 나중에 수정한 json 저장할 수 있도록 남겨두는 mongoose의 흔적
 // const mongoose = require("mongoose");
 // const database =
 // mongoose
@@ -82,6 +83,7 @@ app.post("/api", async (req, res) => {
     NCTID = findtext[0];
   } else {
     // NCT를 가지고 있지 않은 경우
+    // { "url": "https://www.clinicaltrials.gov/api/query/full_studies?expr=Effect%20of%20Carbamazepine%20on%20Dolutegravir%20Pharmacokinetics" }
 
     // URL이 이미 json 형태인 경우
     if (Url.includes("json") !== true) {
@@ -104,15 +106,15 @@ app.post("/api", async (req, res) => {
         try {
           Htmltext = JSON.parse(rawHtml);
           NCTID =
-            Htmltext.FullStudiesResponse.FullStudies[0].Study.ProtocolSection
-              .IdentificationModule.NCTId;
+          Htmltext.FullStudiesResponse.FullStudies[0].Study.ProtocolSection
+          .IdentificationModule.NCTId;
         } catch (e) {
           console.error(e.message);
         }
       });
     });
   }
-
+  // NCTID 추출하기전에 미리 117번 줄이 실행됨. 그래서 NCTID가 undefined기에 바로 resourceControl 실행되는 것.
   //MongoDB에서 가져옴
   let query = { _id: NCTID };
   // console.log("mongo 진입 전");
@@ -120,7 +122,6 @@ app.post("/api", async (req, res) => {
     if (error) {
       console.log("findOne's error not empty result: ", error);
     } else {
-      
       console.log("hello");
       if (result !== null) {
         console.log("MongoDB\n");
