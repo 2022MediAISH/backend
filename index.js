@@ -6,7 +6,6 @@ const bodyParser = require("body-parser");
 const MongoClient = require("mongodb").MongoClient;
 const cors = require("cors");
 const https = require("https");
-const { syncBuiltinESMExports } = require("module");
 // const { Ddata } = require("./models/Ddata");
 
 const DATABASE_NAME = "testdb";
@@ -65,7 +64,7 @@ app.get("/create/:NCTNO", (req, res) => {});
 //   .catch((err) => console.log(err));
 
 // req: 요청, res: 응답
-app.post("/api", (req, res) => {
+app.post("/api", async (req, res) => {
   // console.log(req);
   const post = req.body;
   console.log(post);
@@ -115,69 +114,63 @@ app.post("/api", (req, res) => {
   }
 
   //MongoDB에서 가져옴
-  let isSuccess = false;
-  let query = { _id: "NCT01967771" };
+  let query = { _id: NCTID };
   // console.log("mongo 진입 전");
-  collection.findOne(query, (error, result) => {
+  await collection.findOne(query, (error, result) => {
     if (error) {
       console.log("findOne's error not empty result: ", error);
     } else {
+      
       console.log("hello");
       if (result !== null) {
         console.log("MongoDB\n");
-        isSuccess = true;
         console.log(result);
         res.json(result);
+      } else {
+        // resource_control 실시간으로 돌리기
+        const python_result = spawn("/home/jun/anaconda3/bin/python", [
+          "./resource_control.py",
+          Url,
+        ]);
+    
+        let getJson;
+        let result_json;
+        python_result.stdout.on("data", (data) => {
+          console.log(`stdout: ${data.toString()}`);
+          getJson = data.toString();
+          getJson = getJson.replaceAll("'", '"');
+    
+          result_json = JSON.parse(getJson);
+          res.json(result_json);
+        });
+        python_result.stderr.on("data", (data) => {
+          console.error(`stderr: ${data.toString()}`);
+        });
+    
+        python_result.on("close", (code) => {
+          console.log(`child process exited with code ${code}`);
+          // console.log('======', typeof result_json); // object
+          // res.json(result_json);
+    
+          ///// 데이터 받은거 저장
+          // ddata.save((err, doc)=>{
+          //   if(err) return res.json({success: false, err});
+          //   return res.status(200).json({
+          //     success: true
+          //   });
+          // })
+          // res.send(ddata);
+          // return res.json(python_result);
+          // res.redirect('/')
+        });
       }
+      console.log("finish!====")
     }
   });
-
-  if (isSuccess === false) {
-    // resource_control 실시간으로 돌리기
-    const python_result = spawn("/home/jun/anaconda3/bin/python", [
-      "./resource_control.py",
-      Url,
-    ]);
-
-    let getJson;
-    let result_json;
-    python_result.stdout.on("data", (data) => {
-      console.log(`stdout: ${data.toString()}`);
-      getJson = data.toString();
-      getJson = getJson.replaceAll("'", '"');
-
-      result_json = JSON.parse(getJson);
-    });
-    python_result.stderr.on("data", (data) => {
-      console.error(`stderr: ${data.toString()}`);
-    });
-
-    python_result.on("close", (code) => {
-      console.log(`child process exited with code ${code}`);
-      // console.log('======', typeof result_json); // object
-      return res.json(result_json);
-
-      ///// 데이터 받은거 저장
-      // ddata.save((err, doc)=>{
-      //   if(err) return res.json({success: false, err});
-      //   return res.status(200).json({
-      //     success: true
-      //   });
-      // })
-      // res.send(ddata);
-      // return res.json(python_result);
-      // res.redirect('/')
-    });
-  }
+  
 });
 
 app.get("/api/hello", (req, res) => {
   console.log(req.body);
   res.send("hi");
 });
-
-
-function sleep(ms) {
-  const wakeUpTime = Date.now() + ms;
-  while (Date.now() < wakeUpTime) {}
-}
