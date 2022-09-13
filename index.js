@@ -170,8 +170,3 @@ app.post("/api", async (req, res) => {
   });
   
 });
-
-app.get("/api/hello", (req, res) => {
-  console.log(req.body);
-  res.send("hi");
-});
