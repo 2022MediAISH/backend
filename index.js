@@ -106,8 +106,8 @@ app.post("/api", async (req, res) => {
         try {
           Htmltext = JSON.parse(rawHtml);
           NCTID =
-          Htmltext.FullStudiesResponse.FullStudies[0].Study.ProtocolSection
-          .IdentificationModule.NCTId;
+            Htmltext.FullStudiesResponse.FullStudies[0].Study.ProtocolSection
+              .IdentificationModule.NCTId;
         } catch (e) {
           console.error(e.message);
         }
@@ -117,6 +117,7 @@ app.post("/api", async (req, res) => {
   // NCTID 추출하기전에 미리 117번 줄이 실행됨. 그래서 NCTID가 undefined기에 바로 resourceControl 실행되는 것.
   //MongoDB에서 가져옴
   let query = { _id: NCTID };
+  let result_json;
   // console.log("mongo 진입 전");
   await collection.findOne(query, (error, result) => {
     if (error) {
@@ -133,45 +134,51 @@ app.post("/api", async (req, res) => {
           "./resource_control.py",
           Url,
         ]);
-    
+
         let getJson;
-        let result_json;
         python_result.stdout.on("data", (data) => {
           console.log(`stdout: ${data.toString()}`);
           getJson = data.toString();
           getJson = getJson.replaceAll("'", '"');
-    
+
           result_json = JSON.parse(getJson);
           res.json(result_json);
         });
         python_result.stderr.on("data", (data) => {
           console.error(`stderr: ${data.toString()}`);
         });
-    
+
         python_result.on("close", (code) => {
           console.log(`child process exited with code ${code}`);
-          // console.log('======', typeof result_json); // object
-          // res.json(result_json);
-    
-          ///// 데이터 받은거 저장
-          // ddata.save((err, doc)=>{
-          //   if(err) return res.json({success: false, err});
-          //   return res.status(200).json({
-          //     success: true
-          //   });
-          // })
-          // res.send(ddata);
-          // return res.json(python_result);
-          // res.redirect('/')
         });
       }
-      console.log("finish!====")
+      console.log("finish!====");
     }
   });
-  
 });
 
-app.get("/api/hello", (req, res) => {
-  console.log(req.body);
-  res.send("hi");
+app.post("/crawling", async (req, res) => {
+  const post = req.body;
+  console.log(post);
+  input = post.url;
+  let NCTID = input;
+  //crawlling
+  const originalText = spawn("/home/jun/anaconda3/bin/python", [
+    "./crawling.py",
+    NCTID,
+  ]);
+  let getResult;
+  originalText.stdout.on("data", (data) => {
+    // console.log(`stdout: ${data.toString()}`); // this works well
+    getResult = data.toString();
+    // console.log("data: ", getResult);
+    res.send(getResult);
+  });
+  originalText.stderr.on("data", (data) => {
+    console.error(`stderr: ${data.toString()}`);
+  });
+
+  originalText.on("close", (code) => {
+    console.log(`crawling _ child process exited with code ${code}`);
+  });
 });
