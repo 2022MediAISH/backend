@@ -21,6 +21,7 @@ from queue import Queue
 import os, json
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
+from pymongo import MongoClient
 
 ###############################################
 ################## IMPORTANT ##################

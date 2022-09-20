@@ -4,7 +4,10 @@ import requests
 import sys
 
 def originalText(nctID):
+  # 만약 nctID만 가져왔다면 아래와 같이
   url = "https://www.clinicaltrials.gov/ct2/show/" + nctID
+  # 만약 url형식이 들어왔다면
+  # url.
   res = requests.get(url)
   soup = BeautifulSoup(res.text, "lxml")
 
