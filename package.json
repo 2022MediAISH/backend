@@ -1,7 +1,7 @@
 {
   "name": "nodejsbackend",
   "version": "1.0.0",
-  "description": "",
+  "description": "1. 다음 명령어로 환경 구성\r ```\r npm init\r npm install\r ```\r 2. secrets.json 최상단에 가져오기\r 3. config/dev.js 만들기",
   "main": "index.js",
   "scripts": {
     "start": "nodemon index.js",
@@ -19,5 +19,14 @@
     "nodemon": "^2.0.19",
     "python-shell": "^3.0.1",
     "query-string": "^7.1.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaehyunKim111/backendNodeJS.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jaehyunKim111/backendNodeJS/issues"
+  },
+  "homepage": "https://github.com/jaehyunKim111/backendNodeJS#readme",
+  "devDependencies": {}
 }
