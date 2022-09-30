@@ -1281,9 +1281,9 @@ def request_call(url):
 # url = "https://clinicaltrials.gov/ct2/show/NCT05379179"
 # print(request_call(url))
 
-# if __name__ == "__main__":
-#     # sys.argv[1]은 url임
-#     print(request_call(str(sys.argv[1])))
+if __name__ == "__main__":
+    # sys.argv[1]은 url임
+    print(request_call(str(sys.argv[1])))
     
     # inputFromUser = str(sys.argv[1])
     # response = ""
