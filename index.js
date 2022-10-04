@@ -7,11 +7,7 @@ const MongoClient = require("mongodb").MongoClient;
 const cors = require("cors");
 const https = require("https");
 const fs = require('fs');
-const { resourceLimits } = require("worker_threads");
-const { stringify } = require("querystring");
-// const { Ddata } = require("./models/Ddata");
 const { Console } = require('console');
-
 
 
 const DATABASE_NAME = "testdb";
@@ -50,11 +46,11 @@ app.post("/load", (req, res) => { // 편집본이 존재할때 원본 로드
   console.log(NCTID);
   let query = { _id: NCTID };
 
-  var url = "mongodb://test1:test1234@3.35.243.113:27017/?authMechanism=DEFAULT&authSource=admin";
+
 
   const options = { useUnifiedTopology: true };
 
-  MongoClient.connect(url, options, function (err, db) {
+  MongoClient.connect(config.mongoURI, options, function (err, db) {
 
     if (err) throw err;
 
@@ -127,11 +123,11 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
   let query = { _id: NCTID };
   let result_json;
 
-  var url = "mongodb://test1:test1234@3.35.243.113:27017/?authMechanism=DEFAULT&authSource=admin";
+
 
   const options = { useUnifiedTopology: true };
 
-  MongoClient.connect(url, options, function (err, db) {
+  MongoClient.connect(config.mongoURI, options, function (err, db) {
 
     if (err) throw err;
 
@@ -196,11 +192,9 @@ app.post("/create", (req, res) => { // req.body는 JSON 값, 편집 저장용 �
   });
 
 
-  var url = "mongodb://test1:test1234@3.35.243.113:27017/?authMechanism=DEFAULT&authSource=admin";
-
   const options = { useUnifiedTopology: true };
 
-  MongoClient.connect(url, options, function (err, db) {
+  MongoClient.connect(config.mongoURI, options, function (err, db) {
 
     if (err) throw err;
 

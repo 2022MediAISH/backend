@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import requests
 import sys
 import re
+<<<<<<< HEAD
 import io
 
 sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8')
@@ -11,6 +12,9 @@ sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding='utf-8')
 
 
 
+=======
+
+>>>>>>> fdeae9f53a596f7a02e7b3adba04bac60091adb4
 def originalText(keyword):
   # 만약 nctID만 가져왔다면 아래와 같이
   url = keyword
