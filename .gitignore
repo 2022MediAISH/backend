@@ -2,3 +2,4 @@ config/dev.js
 node_modules
 secrets.json
 .vscode/
+NCT_ID_database
