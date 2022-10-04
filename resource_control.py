@@ -1285,34 +1285,33 @@ if __name__ == "__main__":
     # sys.argv[1]은 url임
     print(request_call(str(sys.argv[1])))
     
-    inputFromUser = str(sys.argv[1])
-    response = ""
-    if(inputFromUser.find("http") == -1):
-        inputFromUser = "https://www.clinicaltrials.gov/api/query/full_studies?expr=" + inputFromUser +"&fmt=json"
+    # inputFromUser = str(sys.argv[1])
+    # response = ""
+    # if(inputFromUser.find("http") == -1):
+    #     inputFromUser = "https://www.clinicaltrials.gov/api/query/full_studies?expr=" + inputFromUser +"&fmt=json"
     
-    response = requests.get(inputFromUser).json()
+    # response = requests.get(inputFromUser).json()
 
-    nct_id = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']
-    print(nct_id)
+    # nct_id = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']
+    # # print(nct_id)
 
-    mongoKey = os.path.join(BASE_DIR, './config.prod.js')
-    # Making Connection
-    myclient = MongoClient(mongoKey.mongoURI)
+    # mongoKey = os.path.join(BASE_DIR, './config.prod.js')
+    # # Making Connection
+    # myclient = MongoClient(mongoKey.mongoURI)
 
-    # database
-    db = myclient["testdb"]
+    # # database
+    # db = myclient["testdb"]
 
-    # Created or Switched to collection
-    # names: GeeksForGeeks
-    Collection = db["test01"]
+    # # Created or Switched to collection
+    # # names: GeeksForGeeks
+    # Collection = db["test01"]
 
-    file_name = nct_id +".json"
-    ##Loading or Opening the json file
-    with open("./NCT_ID_database/"+file_name) as file:
-        file_data = json.load(file)
+    # file_name = nct_id +".json"
+    # ##Loading or Opening the json file
+    # with open("./NCT_ID_database/"+file_name) as file:
+    #     file_data = json.load(file)
 
-    if isinstance(file_data, list):
-        Collection.insert_many(file_data)
-    else:
-        Collection.insert_one(file_data)  
-    print("hello!!!!!!!")
+    # if isinstance(file_data, list):
+    #     Collection.insert_many(file_data)
+    # else:
+    #     Collection.insert_one(file_data)  

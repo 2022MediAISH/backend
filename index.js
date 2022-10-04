@@ -6,7 +6,7 @@ const bodyParser = require("body-parser");
 const MongoClient = require("mongodb").MongoClient;
 const cors = require("cors");
 const https = require("https");
-// const { Ddata } = require("./models/Ddata");
+const fs = require('fs');
 
 const DATABASE_NAME = "testdb";
 let database, collection;
@@ -36,33 +36,16 @@ app.listen(port, () => {
 
 const spawn = require("child_process").spawn;
 
-app.get("/create/:NCTNO", (req, res) => {});
-// // 나중에 수정한 json 저장할 수 있도록 남겨두는 mongoose의 흔적
-// const mongoose = require("mongoose");
-// const database =
-// mongoose
-//   .connect(config.mongoURI, {})
-//   .then(() => console.log("MongoDB connected SUCCESS"))
-//   .catch((err) => console.log(err));
+app.post("/create", (req, res) => {
+  console.log(req.body.DrugInformation.ArmGroupList[0]);
+  const data = JSON.stringify(req.body);
 
-// const MongoClient = require("mongodb").MongoClient;
-// MongoClient.connect(
-//   config.mongoURI,
-//   { useUnifiedTopology: true },
-//   function (err, db) {
-//     if (err) throw err;
-//     var dbo = db.db("testdb");
-//     var query = { _id: "NCT01967771" }; // 이거 바꿔야함
+  fs.writeFile(`./NCT_ID_database/${req.body._id}.json`, data, 'utf8', function (error) {
+    console.log('writeFile completed');
+  });
 
-//     dbo.collection("test01").findOne(query, function (err, result) {
-//       if (result) {
-//         resolve(result);
-//       }
-//     });
-//   }
-// )
-//   .then(() => console.log("MongoDB connected SUCCESS"))
-//   .catch((err) => console.log(err));
+  res.send(req.body);
+});
 
 // req: 요청, res: 응답
 app.post("/api", async (req, res) => {
@@ -129,6 +112,8 @@ app.post("/api", async (req, res) => {
         console.log(result);
         res.json(result);
       } else {
+
+        console.log("start");
         // resource_control 실시간으로 돌리기
         const python_result = spawn("/home/jun/anaconda3/bin/python", [
           "./resource_control.py",
@@ -138,21 +123,23 @@ app.post("/api", async (req, res) => {
         let getJson;
         python_result.stdout.on("data", (data) => {
           console.log(`stdout: ${data.toString()}`);
+          // console.log(`stdout: ${data}`);
           getJson = data.toString();
           getJson = getJson.replaceAll("'", '"');
-
+          
           result_json = JSON.parse(getJson);
           res.json(result_json);
         });
         python_result.stderr.on("data", (data) => {
-          console.error(`stderr: ${data.toString()}`);
+          // console.error(`stderr: ${data.toString()}`);
+          console.log(`stdout: ${data}`);
         });
 
         python_result.on("close", (code) => {
           console.log(`child process exited with code ${code}`);
         });
       }
-      console.log("finish!====");
+      console.log("get Json data . finish!====");
     }
   });
 });
@@ -160,8 +147,7 @@ app.post("/api", async (req, res) => {
 app.post("/crawling", async (req, res) => {
   const post = req.body;
   console.log(post);
-  input = post.url;
-  let NCTID = input;
+  let NCTID =  post.url;
   //crawlling
   const originalText = spawn("/home/jun/anaconda3/bin/python", [
     "./crawling.py",
