@@ -22,7 +22,7 @@ from queue import Queue
 import os, json
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
-from pymongo import MongoClient
+# from pymongo import MongoClient
 
 ###############################################
 ################## IMPORTANT ##################
@@ -1293,7 +1293,7 @@ if __name__ == "__main__":
     # response = requests.get(inputFromUser).json()
 
     # nct_id = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']
-    # # print(nct_id)
+    # print(nct_id)
 
     # mongoKey = os.path.join(BASE_DIR, './config.prod.js')
     # # Making Connection
@@ -1315,3 +1315,4 @@ if __name__ == "__main__":
     #     Collection.insert_many(file_data)
     # else:
     #     Collection.insert_one(file_data)  
+    # print("hello!!!!!!!")

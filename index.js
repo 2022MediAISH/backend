@@ -7,6 +7,8 @@ const MongoClient = require("mongodb").MongoClient;
 const cors = require("cors");
 const https = require("https");
 const fs = require('fs');
+const { Console } = require('console');
+
 
 const DATABASE_NAME = "testdb";
 let database, collection;
@@ -15,7 +17,9 @@ let database, collection;
 app.use(bodyParser.urlencoded({ extended: true })); //클라이언트에서 오는 정보를 서버에서 분석해서 가져올 수 있게 해줌
 // applicaiton/json 형식의 데이터를 분석해서 가져올 수 있게 해줌
 app.use(bodyParser.json());
+
 app.use(cors());
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
@@ -36,25 +40,42 @@ app.listen(port, () => {
 
 const spawn = require("child_process").spawn;
 
-app.post("/create", (req, res) => {
-  console.log(req.body.DrugInformation.ArmGroupList[0]);
-  const data = JSON.stringify(req.body);
 
-  fs.writeFile(`./NCT_ID_database/${req.body._id}.json`, data, 'utf8', function (error) {
-    console.log('writeFile completed');
+app.post("/load", (req, res) => { // 편집본이 존재할때 원본 로드
+  const NCTID = req.body.url; // body는 NCTID
+  console.log(NCTID);
+  let query = { _id: NCTID };
+
+
+
+  const options = { useUnifiedTopology: true };
+
+  MongoClient.connect(config.mongoURI, options, function (err, db) {
+
+    if (err) throw err;
+
+    const dbo = db.db("testdb");
+    const collection_origin = dbo.collection("test01");
+    // 본문에서 해당 내용 불러옴
+    collection_origin.findOne(query, function (err, result) {
+      if (err) throw err;
+      else {
+        if (result !== null) {
+          console.log(result);
+          res.json(result);
+        }
+      }
+    });
   });
 
-  res.send(req.body);
 });
 
-// req: 요청, res: 응답
-app.post("/api", async (req, res) => {
-  // console.log(req);
-  const post = req.body;
-  console.log(post);
-  input = post.url; //url은 key의 이름임
 
-  let Url = input;
+
+app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본, 없으면 원본, 원본도 없으면 리얼타임
+  const post = req.body;
+  let Url = post.url; //url은 key의 이름임
+
   console.log("#####", Url); // url
   let NCTID;
 
@@ -101,70 +122,132 @@ app.post("/api", async (req, res) => {
   //MongoDB에서 가져옴
   let query = { _id: NCTID };
   let result_json;
-  // console.log("mongo 진입 전");
-  await collection.findOne(query, (error, result) => {
-    if (error) {
-      console.log("findOne's error not empty result: ", error);
-    } else {
-      console.log("hello");
-      if (result !== null) {
-        console.log("MongoDB\n");
-        console.log(result);
-        res.json(result);
-      } else {
 
-        console.log("start");
-        // resource_control 실시간으로 돌리기
-        const python_result = spawn("/home/jun/anaconda3/bin/python", [
-          "./resource_control.py",
-          Url,
-        ]);
 
-        let getJson;
-        python_result.stdout.on("data", (data) => {
-          console.log(`stdout: ${data.toString()}`);
-          // console.log(`stdout: ${data}`);
-          getJson = data.toString();
-          getJson = getJson.replaceAll("'", '"');
-          
-          result_json = JSON.parse(getJson);
-          res.json(result_json);
-        });
-        python_result.stderr.on("data", (data) => {
-          // console.error(`stderr: ${data.toString()}`);
-          console.log(`stdout: ${data}`);
-        });
 
-        python_result.on("close", (code) => {
-          console.log(`child process exited with code ${code}`);
-        });
+  const options = { useUnifiedTopology: true };
+
+  MongoClient.connect(config.mongoURI, options, function (err, db) {
+
+    if (err) throw err;
+
+    const dbo = db.db("testdb");
+    const collection = dbo.collection("edit");
+    const collection_origin = dbo.collection("test01");
+
+    collection.countDocuments(query, function (err, c) {
+      if (err) throw err;
+      if (c !== 0) {
+        collection.findOne(query, function (err, result) {
+          if (err) throw err;
+          console.log(`edited${result}`);
+          res.json(result);
+        })
       }
-      console.log("get Json data . finish!====");
-    }
+
+      // edit collection에 없으면
+      else {
+        // 본문에서 해당 내용 불러옴
+        collection_origin.findOne(query, function (err, result) {
+          if (err) throw err;
+          else {
+            if (result !== null) {
+              console.log(`origin${result}`);
+              res.json(result);
+
+            }
+            else {
+              let getJson;
+              const result = spawn('python', ['resource_control.py', Url]);
+              result.stdout.on('data', function (data) {
+                console.log(data.toString());
+                getJson = data.toString();
+                getJson = getJson.replaceAll("'", '"');
+                result_json = JSON.parse(getJson);
+                res.json(result_json);
+              });
+              result.stderr.on('data', function (data) {
+                console.log(data.toString());
+              });
+              result.on('close', (code) => {
+                console.log(`child process exited with code ${code}`);
+              });
+            }
+          }
+        })
+      }
+    });
   });
 });
 
+
+
+
+app.post("/create", (req, res) => { // req.body는 JSON 값, 편집 저장용 라우터
+  console.log(req.body);
+  const data = JSON.stringify(req.body);
+
+  fs.writeFileSync(`./NCT_ID_database/${req.body._id}.json`, data, 'utf8', function (error) {
+    console.log('writeFile completed');
+  });
+
+
+  const options = { useUnifiedTopology: true };
+
+  MongoClient.connect(config.mongoURI, options, function (err, db) {
+
+    if (err) throw err;
+
+    const dbo = db.db("testdb");
+    const collection = dbo.collection("edit");
+    const query = { _id: req.body._id };
+    var total = 0;
+
+    let data = fs.readFileSync(`./NCT_ID_database/${req.body._id}.json`, 'utf-8');
+    let json = JSON.parse(data);
+
+    collection.countDocuments(query, function (err, c) {
+      console.log('Count is ' + c);
+      if (c == 1) {
+        collection.deleteOne(query, function (err, obj) {
+          if (err) throw err;
+          console.log("delete the same file")
+        })
+      }
+    });
+
+    // 이게 먼저 실행됨 (await 써야할 듯)
+    collection.insertOne(json, function (err, res) {
+      if (err) throw err;
+      console.log("1 document inserted");
+      db.close();
+    });
+
+  });
+  res.send(req.body);
+});
+
+
+// crawlling
 app.post("/crawling", async (req, res) => {
   const post = req.body;
-  console.log(post);
-  let NCTID =  post.url;
-  //crawlling
-  const originalText = spawn("/home/jun/anaconda3/bin/python", [
-    "./crawling.py",
-    NCTID,
-  ]);
+  let NCTID = post.url;
   let getResult;
-  originalText.stdout.on("data", (data) => {
-    // console.log(`stdout: ${data.toString()}`); // this works well
+  const result = spawn('python', ['crawling.py', NCTID]);
+  result.stdout.on('data', function (data) {
+    // console.log(data.toString());
     getResult = data.toString();
     // console.log("data: ", getResult);
     res.send(getResult);
   });
-  originalText.stderr.on("data", (data) => {
-    console.error(`stderr: ${data.toString()}`);
+  result.stderr.on('data', function (data) {
+    console.log(data.toString());
   });
 
-  originalText.on("close", (code) => {
+  result.on("close", (code) => {
     console.log(`crawling _ child process exited with code ${code}`);
   });
+
 });
+
+

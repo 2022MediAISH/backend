@@ -1,0 +1,91 @@
+{
+    "Allocation": "Randomized",
+    "CompleteTime": 60,
+    "DesignModel": "Parallel Assignment",
+    "DrugInformation": {
+        "ArmGroupList": [
+            {
+                "ArmGroupDescription": "ct1812: 300  mg 182 days , ",
+                "ArmGroupLabel": "Active Treatment- CT1812 100 mg",
+                "ArmGroupType": "Active Comparator",
+                "InterventionDescription": [
+                    {
+                        "Dosage": "100 mg",
+                        "DrugName": "ct1812",
+                        "Duration": "182 days",
+                        "HowToTake": "",
+                        "OtherName": [
+                            "Study Drug"
+                        ]
+                    }
+                ],
+                "InterventionList": {
+                    "ArmGroupInterventionName": [
+                        "drug: ct1812"
+                    ]
+                }
+            },
+            {
+                "ArmGroupDescription": "ct1812: 300  mg 182 days , ",
+                "ArmGroupLabel": "Active Treatment- CT1812 300 mg",
+                "ArmGroupType": "Active Comparator",
+                "InterventionDescription": [
+                    {
+                        "Dosage": "300 mg",
+                        "DrugName": "ct1812",
+                        "Duration": "182 days",
+                        "HowToTake": "",
+                        "OtherName": [
+                            "Study Drug"
+                        ]
+                    }
+                ],
+                "InterventionList": {
+                    "ArmGroupInterventionName": [
+                        "drug: ct1812"
+                    ]
+                }
+            },
+            {
+                "ArmGroupDescription": "placebo: 300 mg 182 days , ",
+                "ArmGroupLabel": "Placebo Comparator - Placebo",
+                "ArmGroupType": "Placebo Comparator",
+                "InterventionDescription": [
+                    {
+                        "Dosage": "300 mg",
+                        "DrugName": "placebo",
+                        "Duration": "182 days",
+                        "HowToTake": "",
+                        "OtherName": [
+                            "Matching Placebo"
+                        ]
+                    }
+                ],
+                "InterventionList": {
+                    "ArmGroupInterventionName": [
+                        "drug: placebo"
+                    ]
+                }
+            }
+        ]
+    },
+    "Enrollment": "144",
+    "InterventionName": "ct1812, Placebo",
+    "Masking": "Quadruple",
+    "NCTID": "NCT03507790",
+    "Objective": "A Study to Evaluate the Safety and Efficacy of CT1812 in Subjects With Mild to Moderate Alzheimer's Disease.",
+    "OfficialTitle": "A Randomized, Double-Blind, Placebo-Controlled, Parallel-Group, Phase 2 Study to Evaluate the Safety and Efficacy of CT1812 in Subjects With Mild to Moderate Alzheimer's Disease.",
+    "PopulationBox": {
+        "Condition": "Mild to Moderate Alzheimer's Disease",
+        "Gender": "All",
+        "HealthyCondition": "No",
+        "MaxAge": "85 Years",
+        "MinAge": "50 Years",
+        "Participant": "144"
+    },
+    "PopulationRatio": "1.0 : 1.0 : 1.0",
+    "Title": "A Study to Evaluate the Safety and Efficacy of CT1812 in Subjects With Mild to Moderate Alzheimer's Disease.",
+    "WashoutPeriod": "",
+    "_id": "NCT03507790",
+    "version": "1.7.1"
+}
