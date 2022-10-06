@@ -3,3 +3,4 @@ node_modules
 secrets.json
 .vscode/
 .json
+NCT_ID_database/
