@@ -22,7 +22,7 @@ from queue import Queue
 import os, json
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
-# from pymongo import MongoClient
+from pymongo import MongoClient
 
 ###############################################
 ################## IMPORTANT ##################
@@ -103,6 +103,7 @@ from django.core.exceptions import ImproperlyConfigured
 #################################################################################################################################################
 #################################################################################################################################################
 #################################################################################################################################################
+
 BASE_DIR = Path(__file__).resolve().parent
 
 secret_file = os.path.join(BASE_DIR, 'secrets.json') # secrets.json 파일 위치를 명시
@@ -1273,7 +1274,6 @@ def request_call(url):
 
         return request_call
 
-
 # url = "https://clinicaltrials.gov/ct2/show/NCT05356351"
 # #위의 오류케이스 발견됨 >> 2가지 수정 
 # # 1.만약 약물이 A and B로 묶일때 이를 쪼개는 코드로 수정함
@@ -1285,34 +1285,48 @@ if __name__ == "__main__":
     # sys.argv[1]은 url임
     print(request_call(str(sys.argv[1])))
     
-    # inputFromUser = str(sys.argv[1])
-    # response = ""
+    inputFromUser = str(sys.argv[1])
+    response = ""
     # if(inputFromUser.find("http") == -1):
     #     inputFromUser = "https://www.clinicaltrials.gov/api/query/full_studies?expr=" + inputFromUser +"&fmt=json"
+    if('NCT' in inputFromUser):
+        try:
+            expr = re.search("NCT[0-9]+", inputFromUser)
+            expr = expr.group()
+            if((expr == None) or ("&fmt=json" in inputFromUser)):
+                re_url = inputFromUser
+            else:
+                re_url = "https://clinicaltrials.gov/api/query/full_studies?expr=" + expr + "&fmt=json"
+        except:
+            re_url = inputFromUser.replace(" ", "")
+            
     
-    # response = requests.get(inputFromUser).json()
+    response = requests.get(re_url).json()
+    
+    nct_id = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']
 
-    # nct_id = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']
-    # print(nct_id)
+    mongoKey = os.path.join(BASE_DIR, './config/prod.js')
+    
+    # Making Connection
+    myclient = MongoClient(secrets['mongoURI'])
 
-    # mongoKey = os.path.join(BASE_DIR, './config.prod.js')
-    # # Making Connection
-    # myclient = MongoClient(mongoKey.mongoURI)
+    # database
+    db = myclient["testdb"]
 
-    # # database
-    # db = myclient["testdb"]
+    # Created or Switched to collection
+    # names: GeeksForGeeks
+    Collection = db["test01"]
 
-    # # Created or Switched to collection
-    # # names: GeeksForGeeks
-    # Collection = db["test01"]
+    file_name = nct_id +".json"
 
-    # file_name = nct_id +".json"
-    # ##Loading or Opening the json file
-    # with open("./NCT_ID_database/"+file_name) as file:
-    #     file_data = json.load(file)
+    try:
+        ##Loading or Opening the json file
+        with open("./NCT_ID_database/"+file_name) as file:
+            file_data = json.load(file)
 
-    # if isinstance(file_data, list):
-    #     Collection.insert_many(file_data)
-    # else:
-    #     Collection.insert_one(file_data)  
-    # print("hello!!!!!!!")
+        if isinstance(file_data, list):
+            Collection.insert_many(file_data)
+        else:
+            Collection.insert_one(file_data)  
+    except:
+        pass
