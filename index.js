@@ -32,7 +32,7 @@ app.listen(port, () => {
         throw error;
       }
       database = client.db(DATABASE_NAME);
-      collection = database.collection("test01");
+      collection = database.collection("test02");
       console.log("Connected to `" + DATABASE_NAME + "`!");
     }
   );
@@ -55,7 +55,7 @@ app.post("/load", (req, res) => { // 편집본이 존재할때 원본 로드
     if (err) throw err;
 
     const dbo = db.db("testdb");
-    const collection_origin = dbo.collection("test01");
+    const collection_origin = dbo.collection("test02");
     // 본문에서 해당 내용 불러옴
     collection_origin.findOne(query, function (err, result) {
       if (err) throw err;
@@ -133,7 +133,7 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
 
     const dbo = db.db("testdb");
     const collection = dbo.collection("edit");
-    const collection_origin = dbo.collection("test01");
+    const collection_origin = dbo.collection("test02");
 
     collection.countDocuments(query, function (err, c) {
       if (err) throw err;
@@ -158,7 +158,7 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
             }
             else {
               let getJson;
-              const result = spawn('python', ['data_extract_ACM.py', Url]);
+              const result = spawn('python', ['data_extract_Biolinkbert.py', Url]);
               result.stdout.on('data', function (data) {
                 console.log(data.toString());
                 getJson = data.toString();
