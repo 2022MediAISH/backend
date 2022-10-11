@@ -8,6 +8,7 @@ const cors = require("cors");
 const https = require("https");
 const fs = require('fs');
 const { Console } = require('console');
+const path = require("path");
 
 
 const DATABASE_NAME = "testdb";
@@ -19,7 +20,10 @@ app.use(bodyParser.urlencoded({ extended: true })); //클라이언트에서 오�
 app.use(bodyParser.json());
 
 app.use(cors());
-
+app.use(express.static(path.join(__dirname, '../frontendReact/build')));
+app.get('/', function(req, res){
+  res.sendFile(path.join(__dirname, '../frontendReact/build/index.html'))
+})
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
@@ -158,11 +162,11 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
             }
             else {
               let getJson;
-              const result = spawn('python', ['data_extract_Biolinkbert.py', Url]);
+              const result = spawn('/home/ubuntu/22SH/2ndIntegration/backendNodeJS/venv/bin/python3.6', ['data_extract_ACM.py', Url]);
               result.stdout.on('data', function (data) {
                 console.log(data.toString());
                 getJson = data.toString();
-                getJson = getJson.replaceAll("'", '"');
+                getJson = getJson.replace(/'/g, '"');
                 result_json = JSON.parse(getJson);
                 res.json(result_json);
               });
@@ -233,7 +237,7 @@ app.post("/crawling", async (req, res) => {
   const post = req.body;
   let NCTID = post.url;
   let getResult;
-  const result = spawn('python', ['crawling.py', NCTID]);
+  const result = spawn('/home/ubuntu/22SH/2ndIntegration/backendNodeJS/venv/bin/python3.6', ['crawling.py', NCTID]);
   result.stdout.on('data', function (data) {
     // console.log(data.toString());
     getResult = data.toString();
@@ -249,5 +253,3 @@ app.post("/crawling", async (req, res) => {
   });
 
 });
-
-

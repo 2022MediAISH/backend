@@ -5,12 +5,7 @@ import boto3
 import json
 #pip install sumy
 # Importing the parser and tokenizer
-from sumy.parsers.plaintext import PlaintextParser
-from sumy.nlp.tokenizers import Tokenizer
-# Import the LexRank summarizer
-from sumy.summarizers.lex_rank import LexRankSummarizer
 #pip install nltk
-import nltk
 #download only once 
 #nltk.download('punkt')
 import math
@@ -20,7 +15,6 @@ from threading import Thread
 from queue import Queue
 import os, json
 from pathlib import Path
-from django.core.exceptions import ImproperlyConfigured
 from pymongo import MongoClient
 
 ###############################################
