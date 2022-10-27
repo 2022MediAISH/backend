@@ -1494,6 +1494,20 @@ def get_interventionName(response):
     result_dictionary = json.loads(change_dictionary)
     return(result_dictionary)
 
+#################################################################################################################################################
+#################################################################################################################################################
+#################################################################################################################################################
+
+def getStudyType(response):
+    studyType = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['StudyType']
+    return studyType
+
+class StudyTypeError(Exception):
+    def __init__(self, message='It is observational'):
+        self.message = message
+
+    def __str__(self):
+        return self.message 
 
 #################################################################################################################################################
 #################################################################################################################################################
@@ -1552,6 +1566,9 @@ def request_call(url):
         Thread(target=wrapper, args=(get_drug_time, response, drug_time)).start() 
         Thread(target=wrapper, args=(get_population_box, response, population_box)).start() 
 
+        if getStudyType(response) == "Observational":
+                    return "It is observational"
+
         #dictionary format
         calc_date, population_ratio, official_title, objective, allocation, enrollment, design_model, masking, intervention_name, title = get_calc_date(response), get_population_ratio(response), get_officialTitle(response), get_objective(response), get_allocation(response), get_enrollment(response), get_designModel(response), get_maksing(response), get_interventionName(response), get_title(response)
 
@@ -1585,7 +1602,16 @@ def request_call(url):
 
 if __name__ == "__main__":
     # sys.argv[1]은 url임
-    print(request_call(str(sys.argv[1])))
+    try:
+        req = request_call(str(sys.argv[1]))
+        if req == "It is observational":
+            raise StudyTypeError
+        else:
+            print(req)
+    except StudyTypeError :
+        print({'message': "It is observational"})
+    except KeyError :
+        print({'message': "It is keyError"})
     
     inputFromUser = str(sys.argv[1])
     response = ""
