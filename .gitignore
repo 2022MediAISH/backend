@@ -4,3 +4,7 @@ secrets.json
 .vscode/
 .json
 NCT_ID_database/
+requirements*.txt
+venv/
+venPy8/
+BioLinkBERT-base-finetuned-ner/

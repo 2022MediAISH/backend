@@ -948,12 +948,12 @@ def get_drug_time(response):
 ########################################################################################
 #밑에 코드는 ACM이랑 BioLinkBert로 ArmGroupdescription 부분에서 약물명 고쳐서 쓰는 코드 at intervention Description요#
 ########################################################################################
-    print(drugs_arm['InterventionByBERN2'])
+    # print(drugs_arm['InterventionByBERN2'])
 
     for text in drugs_arm['InterventionByBERN2']:
         DetectEntitiestext = text['Bern2Intervention']
         test = acm_Entities(DetectEntitiestext)
-        print(test)
+        # print(test)
 
         for i in drug_dict:            
             for change in change_inter:
@@ -1350,8 +1350,8 @@ def get_washout(response):
     #comprehend = boto3.client('comprehend') #주석 하기!!
     DetectEntitiestext = line
     test = (comprehend.detect_entities(Text=DetectEntitiestext, LanguageCode='en'))
-    convert = json.dumps(test,sort_keys=True, indent=4)
-    data = json.loads(convert)
+    # convert = json.dumps(test,sort_keys=True, indent=4)
+    # data = json.loads(convert)
 
     # Quantitiy 안에 times 있는지 있으면 뽑기
     for i in range(len(test['Entities'])):
