@@ -162,7 +162,7 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
             }
             else {
               let getJson;
-              const result = spawn('/home/ubuntu/22SH/2ndIntegration/backendNodeJS/venv/bin/python3.6', ['data_extract_ACM.py', Url]);
+              const result = spawn('/home/ubuntu/22SH/2ndIntegration/backendNodeJS/venPy8/bin/python', ['data_extract_Biolinkbert.py', Url]);
               result.stdout.on('data', function (data) {
                 console.log(data.toString());
                 getJson = data.toString();

@@ -5,12 +5,8 @@ import boto3
 import json
 #pip install sumy
 # Importing the parser and tokenizer
-from sumy.parsers.plaintext import PlaintextParser
-from sumy.nlp.tokenizers import Tokenizer
 # Import the LexRank summarizer
-from sumy.summarizers.lex_rank import LexRankSummarizer
 #pip install nltk
-import nltk
 #download only once 
 #nltk.download('punkt')
 import math
@@ -20,8 +16,8 @@ from threading import Thread
 from queue import Queue
 import os, json
 from pathlib import Path
-from django.core.exceptions import ImproperlyConfigured
 from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
+from pymongo import MongoClient
 ###############################################
 ################## IMPORTANT ##################
 ###############################################
@@ -126,7 +122,7 @@ comprehend = boto3.client('comprehend', aws_access_key_id=accessKey, aws_secret_
 #################################################################################################################################################
 tokenizer = AutoTokenizer.from_pretrained("BioLinkBERT-base-finetuned-ner", model_max_length=512)
 model = AutoModelForTokenClassification.from_pretrained("BioLinkBERT-base-finetuned-ner")
-effect_ner_model = pipeline(task="ner", model=model, tokenizer=tokenizer, device=0)
+effect_ner_model = pipeline(task="ner", model=model, tokenizer=tokenizer, device=-1)
 
 recording_temp_name = ["acetaminophen", "ibuprofen", "acetylcysteine", "adenosine", "albendazole", "albutein"]
 record_all_converted_temp = []
