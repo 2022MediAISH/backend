@@ -96,7 +96,13 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
     // URL이 이미 json 형태인 경우
     if (Url.includes("json") !== true) {
       // URL이 json이 아닌 경우
-      let expr = Url.match("expr=[0-9a-zA-Z%+.]+")[0];
+      let expr = '';
+      try {
+        expr = Url.match("expr=[0-9a-zA-Z%+.]+")[0];
+      }
+      catch {
+        return res.json({ "message": "It is not nctID" });
+      }
       // console.log("expr", expr);
       Url =
         "https://clinicaltrials.gov/api/query/full_studies?" +
