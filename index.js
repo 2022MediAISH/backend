@@ -145,7 +145,7 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
         collection.findOne(query, function (err, result) {
           if (err) throw err;
           console.log(`edited${result}`);
-          res.json(result);
+          return res.json(result);
         })
       }
 
@@ -157,7 +157,7 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
           else {
             if (result !== null) {
               console.log(`origin${result}`);
-              res.json(result);
+              return res.json(result);
 
             }
             else {
@@ -168,7 +168,7 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
                 getJson = data.toString();
                 getJson = getJson.replace(/'/g, '"');
                 result_json = JSON.parse(getJson);
-                res.json(result_json);
+                return res.json(result_json);
               });
               result.stderr.on('data', function (data) {
                 console.log(data.toString());
