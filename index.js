@@ -14,6 +14,12 @@ const path = require("path");
 const DATABASE_NAME = "testdb";
 let database, collection;
 
+let isProd = true;
+let pythonPath = '/home/ubuntu/22SH/2ndIntegration/backendNodeJS/venPy8/bin/python';
+if (isProd == false) {
+  pythonPath = '/home/jun/anaconda3/bin/python';
+}
+
 // application/x-www-form-urlencoded 형식으로 된 데이터를 분석해서 가져올 수 있게 해줌
 app.use(bodyParser.urlencoded({ extended: true })); //클라이언트에서 오는 정보를 서버에서 분석해서 가져올 수 있게 해줌
 // applicaiton/json 형식의 데이터를 분석해서 가져올 수 있게 해줌
@@ -21,7 +27,7 @@ app.use(bodyParser.json());
 
 app.use(cors());
 app.use(express.static(path.join(__dirname, '../frontendReact/build')));
-app.get('/', function(req, res){
+app.get('/', function (req, res) {
   res.sendFile(path.join(__dirname, '../frontendReact/build/index.html'))
 })
 
@@ -162,7 +168,7 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
             }
             else {
               let getJson;
-              const result = spawn('/home/ubuntu/22SH/2ndIntegration/backendNodeJS/venPy8/bin/python', ['data_extract_Biolinkbert.py', Url]);
+              const result = spawn(pythonPath, ['data_extract_Biolinkbert.py', Url]);
               result.stdout.on('data', function (data) {
                 console.log(data.toString());
                 getJson = data.toString();
@@ -237,7 +243,7 @@ app.post("/crawling", async (req, res) => {
   const post = req.body;
   let NCTID = post.url;
   let getResult;
-  const result = spawn('/home/ubuntu/22SH/2ndIntegration/backendNodeJS/venv/bin/python3.6', ['crawling.py', NCTID]);
+  const result = spawn(pythonPath, ['crawling.py', NCTID]);
   result.stdout.on('data', function (data) {
     // console.log(data.toString());
     getResult = data.toString();
