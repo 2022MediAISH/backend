@@ -14,7 +14,7 @@ const path = require("path");
 const DATABASE_NAME = "testdb";
 let database, collection;
 
-let isProd = true;
+let isProd = false;
 let pythonPath = '/home/ubuntu/22SH/2ndIntegration/backendNodeJS/venPy8/bin/python';
 if (isProd == false) {
   pythonPath = '/home/jun/anaconda3/bin/python';
@@ -55,8 +55,13 @@ app.post("/load", (req, res) => { // 편집본이 존재할때 원본 로드
   const NCTID = req.body.url; // body는 NCTID
   console.log(NCTID);
   let query = { _id: NCTID };
-
-
+  let selectedAPI = req.body.api;
+  let collectionNum;
+  if (selectedAPI === "acm") {
+    collectionNum = "test01";
+  } else {
+    collectionNum = "test02";
+  }
 
   const options = { useUnifiedTopology: true };
 
@@ -65,7 +70,7 @@ app.post("/load", (req, res) => { // 편집본이 존재할때 원본 로드
     if (err) throw err;
 
     const dbo = db.db("testdb");
-    const collection_origin = dbo.collection("test02");
+    const collection_origin = dbo.collection(collectionNum);
     // 본문에서 해당 내용 불러옴
     collection_origin.findOne(query, function (err, result) {
       if (err) throw err;
@@ -85,6 +90,7 @@ app.post("/load", (req, res) => { // 편집본이 존재할때 원본 로드
 app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본, 없으면 원본, 원본도 없으면 리얼타임
   const post = req.body;
   let Url = post.url; //url은 key의 이름임
+  let selectedAPI = post.api;
 
   console.log("#####", Url); // url
   let NCTID;
@@ -146,10 +152,16 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
   MongoClient.connect(config.mongoURI, options, function (err, db) {
 
     if (err) throw err;
+    let collectionNum;
+    if (selectedAPI === "acm") {
+      collectionNum = "test01";
+    } else {
+      collectionNum = "test02";
+    }
 
     const dbo = db.db("testdb");
     const collection = dbo.collection("edit");
-    const collection_origin = dbo.collection("test02");
+    const collection_origin = dbo.collection(collectionNum);
 
     collection.countDocuments(query, function (err, c) {
       if (err) throw err;
@@ -174,18 +186,23 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
             }
             else {
               let getJson;
-              const result = spawn(pythonPath, ['data_extract_Biolinkbert.py', Url]);
-              result.stdout.on('data', function (data) {
+              let result_json;
+              if (selectedAPI === "acm") {
+                result_json = spawn(pythonPath, ['data_extract_ACM.py', Url]);
+              } else if (selectedAPI === "biolink") {
+                result_json = spawn(pythonPath, ['data_extract_Biolinkbert.py', Url]);
+              }
+              result_json.stdout.on('data', function (data) {
                 console.log(data.toString());
                 getJson = data.toString();
                 getJson = getJson.replace(/'/g, '"');
                 result_json = JSON.parse(getJson);
                 return res.json(result_json);
               });
-              result.stderr.on('data', function (data) {
+              result_json.stderr.on('data', function (data) {
                 console.log(data.toString());
               });
-              result.on('close', (code) => {
+              result_json.on('close', (code) => {
                 console.log(`child process exited with code ${code}`);
               });
             }
@@ -195,8 +212,6 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
     });
   });
 });
-
-
 
 
 app.post("/create", (req, res) => { // req.body는 JSON 값, 편집 저장용 라우터
