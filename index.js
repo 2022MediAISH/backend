@@ -14,11 +14,8 @@ const path = require("path");
 const DATABASE_NAME = "testdb";
 let database, collection;
 
-let isProd = false;
-let pythonPath = '/home/ubuntu/22SH/2ndIntegration/backendNodeJS/venPy8/bin/python';
-if (isProd == false) {
-  pythonPath = '/home/jun/anaconda3/bin/python';
-}
+let pythonPathBio = '/home/ubuntu/22SH/2ndIntegration/backend/venPy8/bin/python';
+const pythonPathACM = '/home/ubuntu/22SH/2ndIntegration/backend/venv/bin/python3.6';
 
 // application/x-www-form-urlencoded 형식으로 된 데이터를 분석해서 가져올 수 있게 해줌
 app.use(bodyParser.urlencoded({ extended: true })); //클라이언트에서 오는 정보를 서버에서 분석해서 가져올 수 있게 해줌
@@ -26,9 +23,9 @@ app.use(bodyParser.urlencoded({ extended: true })); //클라이언트에서 오�
 app.use(bodyParser.json());
 
 app.use(cors());
-app.use(express.static(path.join(__dirname, '../frontendReact/build')));
+app.use(express.static(path.join(__dirname, '../frontend/build')));
 app.get('/', function (req, res) {
-  res.sendFile(path.join(__dirname, '../frontendReact/build/index.html'))
+  res.sendFile(path.join(__dirname, '../frontend/build/index.html'))
 })
 
 app.listen(port, () => {
@@ -42,7 +39,7 @@ app.listen(port, () => {
         throw error;
       }
       database = client.db(DATABASE_NAME);
-      collection = database.collection("test02");
+      // collection = database.collection("test02");
       console.log("Connected to `" + DATABASE_NAME + "`!");
     }
   );
@@ -58,9 +55,9 @@ app.post("/load", (req, res) => { // 편집본이 존재할때 원본 로드
   let selectedAPI = req.body.api;
   let collectionNum;
   if (selectedAPI === "acm") {
-    collectionNum = "test01";
+    collectionNum = "ACM";
   } else {
-    collectionNum = "test02";
+    collectionNum = "ACM+Biolink";
   }
 
   const options = { useUnifiedTopology: true };
@@ -150,13 +147,12 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
   const options = { useUnifiedTopology: true };
 
   MongoClient.connect(config.mongoURI, options, function (err, db) {
-
     if (err) throw err;
     let collectionNum;
     if (selectedAPI === "acm") {
-      collectionNum = "test01";
+      collectionNum = "ACM";
     } else {
-      collectionNum = "test02";
+      collectionNum = "ACM+Biolink";
     }
 
     const dbo = db.db("testdb");
@@ -188,9 +184,11 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
               let getJson;
               let result_json;
               if (selectedAPI === "acm") {
-                result_json = spawn(pythonPath, ['data_extract_ACM.py', Url]);
+                console.log("acm!");
+                result_json = spawn(pythonPathACM, ['data_extract_Combine.py', Url, 0]);
               } else if (selectedAPI === "biolink") {
-                result_json = spawn(pythonPath, ['data_extract_Biolinkbert.py', Url]);
+                console.log("biolink!");
+                result_json = spawn(pythonPathBio, ['data_extract_Combine.py', Url, 1]);
               }
               result_json.stdout.on('data', function (data) {
                 console.log(data.toString());
@@ -264,7 +262,7 @@ app.post("/crawling", async (req, res) => {
   const post = req.body;
   let NCTID = post.url;
   let getResult;
-  const result = spawn(pythonPath, ['crawling.py', NCTID]);
+  const result = spawn(pythonPathACM, ['crawling.py', NCTID]);
   result.stdout.on('data', function (data) {
     // console.log(data.toString());
     getResult = data.toString();

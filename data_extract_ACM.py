@@ -1337,7 +1337,7 @@ if __name__ == "__main__":
 
     # Created or Switched to collection
     # names: GeeksForGeeks
-    Collection = db["test01"]
+    Collection = db["ACM"]
 
     file_name = nct_id +".json"
 
