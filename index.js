@@ -17,6 +17,10 @@ let database, collection;
 let pythonPathBio = '/home/ubuntu/22SH/2ndIntegration/backend/venPy8/bin/python';
 const pythonPathACM = '/home/ubuntu/22SH/2ndIntegration/backend/venv/bin/python3.6';
 
+app.use(express.json({
+  limit: '200kb'
+}))
+
 // application/x-www-form-urlencoded 형식으로 된 데이터를 분석해서 가져올 수 있게 해줌
 app.use(bodyParser.urlencoded({ extended: true })); //클라이언트에서 오는 정보를 서버에서 분석해서 가져올 수 있게 해줌
 // applicaiton/json 형식의 데이터를 분석해서 가져올 수 있게 해줌
@@ -27,6 +31,7 @@ app.use(express.static(path.join(__dirname, '../frontend/build')));
 app.get('/', function (req, res) {
   res.sendFile(path.join(__dirname, '../frontend/build/index.html'))
 })
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
@@ -185,7 +190,7 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
               let result_json;
               if (selectedAPI === "acm") {
                 console.log("acm!");
-                result_json = spawn(pythonPathACM, ['data_extract_Combine.py', Url, 0]);
+                result_json = spawn('python', ['data_extract_Combine.py', Url, 0]);
               } else if (selectedAPI === "biolink") {
                 console.log("biolink!");
                 result_json = spawn(pythonPathBio, ['data_extract_Combine.py', Url, 1]);
@@ -256,13 +261,40 @@ app.post("/create", (req, res) => { // req.body는 JSON 값, 편집 저장용 �
   res.send(req.body);
 });
 
+// img history
+app.post("/img", async (req, res) => {
+  console.log("complete");
+  const { imgSrc } = req.body;
+
+  fs.appendFileSync(`./img-url.txt`, `\n${imgSrc}`, 'utf8', function (error) {
+    console.log('writeFile completed');
+  });
+
+  return res.json({ "message": "It is not nctID" });
+});
+
+// img history
+app.get("/img", async (req, res) => {
+  const data = fs.readFileSync(`./img-url.txt`, 'utf8');
+  const images = data.split('\n');
+
+  // const set = new Set(images);
+  let dataArr = images;
+  dataArr = dataArr.reverse();
+  dataArr = dataArr.slice(0, 3)
+  const result = { dataArr };
+  res.send(result);
+});
+
+
+
 
 // crawlling
 app.post("/crawling", async (req, res) => {
   const post = req.body;
   let NCTID = post.url;
   let getResult;
-  const result = spawn(pythonPathACM, ['crawling.py', NCTID]);
+  const result = spawn('python', ['crawling.py', NCTID]);
   result.stdout.on('data', function (data) {
     // console.log(data.toString());
     getResult = data.toString();
