@@ -264,25 +264,35 @@ app.post("/create", (req, res) => { // req.body는 JSON 값, 편집 저장용 �
 // img history
 app.post("/img", async (req, res) => {
   console.log("complete");
-  const { imgSrc } = req.body;
+  const { imgSrc, nctID } = req.body;
 
   fs.appendFileSync(`./img-url.txt`, `\n${imgSrc}`, 'utf8', function (error) {
     console.log('writeFile completed');
   });
+  fs.appendFileSync(`./img-nct.txt`, `\n${nctID}`, 'utf8', function (error) {
+    console.log('writeFile completed');
+  });
 
-  return res.json({ "message": "It is not nctID" });
+  return res.json({ "message": "Good" });
 });
 
 // img history
 app.get("/img", async (req, res) => {
-  const data = fs.readFileSync(`./img-url.txt`, 'utf8');
-  const images = data.split('\n');
+  const data1 = fs.readFileSync(`./img-url.txt`, 'utf8');
+  const data2 = fs.readFileSync(`./img-nct.txt`, 'utf8');
+  let images = data1.split('\n');
+  let ncts = data2.split('\n');
 
-  // const set = new Set(images);
-  let dataArr = images;
-  dataArr = dataArr.reverse();
-  dataArr = dataArr.slice(0, 3)
-  const result = { dataArr };
+  // const set = new Set(images);s
+
+  images = images.reverse();
+  images = images.slice(0, 3)
+  ncts = ncts.reverse();
+  ncts = ncts.slice(0, 3)
+  const result = {
+    images,
+    ncts,
+  };
   res.send(result);
 });
 
