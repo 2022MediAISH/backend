@@ -190,7 +190,7 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
               let result_json;
               if (selectedAPI === "acm") {
                 console.log("acm!");
-                result_json = spawn('python', ['data_extract_Combine.py', Url, 0]);
+                result_json = spawn(pythonPathACM, ['data_extract_Combine.py', Url, 0]);
               } else if (selectedAPI === "biolink") {
                 console.log("biolink!");
                 result_json = spawn(pythonPathBio, ['data_extract_Combine.py', Url, 1]);
@@ -294,7 +294,7 @@ app.post("/crawling", async (req, res) => {
   const post = req.body;
   let NCTID = post.url;
   let getResult;
-  const result = spawn('python', ['crawling.py', NCTID]);
+  const result = spawn(pythonPathACM, ['crawling.py', NCTID]);
   result.stdout.on('data', function (data) {
     // console.log(data.toString());
     getResult = data.toString();
