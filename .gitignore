@@ -8,3 +8,4 @@ requirements*.txt
 venv/
 venPy8/
 BioLinkBERT-base-finetuned-ner/
+*.txt
