@@ -169,6 +169,7 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
       if (c !== 0) {
         collection.findOne(query, function (err, result) {
           if (err) throw err;
+          console.log(result);
           console.log(`edited${result}`);
           return res.json(result);
         })
@@ -190,12 +191,14 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
               let result_json;
               if (selectedAPI === "acm") {
                 console.log("acm!");
-                result_json = spawn(pythonPathACM, ['data_extract_Combine.py', Url, 0]);
+                result_json = spawn(pythonPathACM, ['data_extract_ACM.py', Url]);
+
               } else if (selectedAPI === "biolink") {
                 console.log("biolink!");
                 result_json = spawn(pythonPathBio, ['data_extract_Combine.py', Url, 1]);
               }
               result_json.stdout.on('data', function (data) {
+
                 console.log(data.toString());
                 getJson = data.toString();
                 getJson = getJson.replace(/'/g, '"');
@@ -263,13 +266,43 @@ app.post("/create", (req, res) => { // req.body는 JSON 값, 편집 저장용 �
 
 // img history
 app.post("/img", async (req, res) => {
-  console.log("complete");
   const { imgSrc, nctID } = req.body;
 
-  fs.appendFileSync(`./img-url.txt`, `\n${imgSrc}`, 'utf8', function (error) {
+  const data1 = fs.readFileSync(`./img-url.txt`, 'utf8');
+  const data2 = fs.readFileSync(`./img-nct.txt`, 'utf8');
+  let images = data1.split('\n');
+  let ncts = data2.split('\n');
+  let idx;
+  let flag = 0;
+
+  ncts = ncts.filter((nct, index) => {
+    if (nct === nctID) {
+      idx = index;
+      flag = 1;
+    }
+    return nct !== nctID
+  });
+
+  console.log(idx);
+
+  if (flag) { // 중복이 일어났다면 중복된거 제거
+    images.splice(idx, 1);
+  }
+  else { // 중복이 일어나지 않았다면 맨 앞의 것 제거
+    ncts = ncts.slice(1, 3);
+    images = images.slice(1, 3);
+  }
+
+  ncts.push(nctID);
+  images.push(imgSrc);
+
+  const nctAryToStr = ncts.join('\n');
+  const imageAryToStr = images.join('\n');
+
+  fs.writeFileSync(`./img-url.txt`, `${imageAryToStr}`, 'utf8', function (error) {
     console.log('writeFile completed');
   });
-  fs.appendFileSync(`./img-nct.txt`, `\n${nctID}`, 'utf8', function (error) {
+  fs.writeFileSync(`./img-nct.txt`, `${nctAryToStr}`, 'utf8', function (error) {
     console.log('writeFile completed');
   });
 
@@ -283,12 +316,8 @@ app.get("/img", async (req, res) => {
   let images = data1.split('\n');
   let ncts = data2.split('\n');
 
-  // const set = new Set(images);s
-
   images = images.reverse();
-  images = images.slice(0, 3)
   ncts = ncts.reverse();
-  ncts = ncts.slice(0, 3)
   const result = {
     images,
     ncts,
@@ -304,7 +333,7 @@ app.post("/crawling", async (req, res) => {
   const post = req.body;
   let NCTID = post.url;
   let getResult;
-  const result = spawn(pythonPathACM, ['crawling.py', NCTID]);
+  const result = spawn('python', ['crawling.py', NCTID]);
   result.stdout.on('data', function (data) {
     // console.log(data.toString());
     getResult = data.toString();
