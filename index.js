@@ -88,10 +88,10 @@ app.post("/load", (req, res) => { // 편집본이 존재할때 원본 로드
 });
 
 
-
 app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본, 없으면 원본, 원본도 없으면 리얼타임
   const post = req.body;
   let Url = post.url; //url은 key의 이름임
+  // let selectedArr = post.api;
   let selectedAPI = post.api;
 
   console.log("#####", Url); // url
@@ -106,6 +106,7 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
   } else {
     // NCT를 가지고 있지 않은 경우
     // { "url": "https://www.clinicaltrials.gov/api/query/full_studies?expr=Effect%20of%20Carbamazepine%20on%20Dolutegravir%20Pharmacokinetics" }
+
 
     // URL이 이미 json 형태인 경우
     if (Url.includes("json") !== true) {
@@ -147,78 +148,161 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
   let query = { _id: NCTID };
   let result_json;
 
-
-
+  // for (let k = 0; k < selectedArr.length; k++) {
+  // let selectedAPI = selectedArr[0];
   const options = { useUnifiedTopology: true };
 
   MongoClient.connect(config.mongoURI, options, function (err, db) {
     if (err) throw err;
-    let collectionNum;
-    if (selectedAPI === "acm") {
-      collectionNum = "ACM";
-    } else {
-      collectionNum = "ACM+Biolink";
-    }
+    if (selectedAPI !== "biolinkacm") {
 
-    const dbo = db.db("testdb");
-    const collection = dbo.collection("edit");
-    const collection_origin = dbo.collection(collectionNum);
-
-    collection.countDocuments(query, function (err, c) {
-      if (err) throw err;
-      if (c !== 0) {
-        collection.findOne(query, function (err, result) {
-          if (err) throw err;
-          console.log(result);
-          console.log(`edited${result}`);
-          return res.json(result);
-        })
+      // single api인 경우
+      console.log("this is for single api");
+      let collectionNum = "ACM+Biolink";
+      if (selectedAPI === "acm") {
+        collectionNum = "ACM";
+      } else if (selectedAPI === "biolink") {
+        collectionNum = "ACM+Biolink";
       }
 
-      // edit collection에 없으면
-      else {
-        // 본문에서 해당 내용 불러옴
-        collection_origin.findOne(query, function (err, result) {
-          if (err) throw err;
-          else {
-            if (result !== null) {
-              console.log(`origin${result}`);
-              return res.json(result);
+      const dbo = db.db("testdb");
+      const collection = dbo.collection("edit");
+      const collection_origin = dbo.collection(collectionNum);
 
-            }
+      collection.countDocuments(query, function (err, c) {
+        if (err) throw err;
+        if (c !== 0) {
+          collection.findOne(query, function (err, result) {
+            if (err) throw err;
+            console.log(`edited${result}`);
+            return res.json(result);
+          })
+        }
+
+        // edit collection에 없으면
+        else {
+          // collection에 있는 내용인지 확인
+          collection_origin.findOne(query, function (err, result) {
+            if (err) throw err;
             else {
-              let getJson;
-              let result_json;
-              if (selectedAPI === "acm") {
-                console.log("acm!");
-                result_json = spawn(pythonPathACM, ['data_extract_ACM.py', Url]);
+              if (result !== null) {
+                console.log(`origin${result}`);
+                return res.json(result);
 
-              } else if (selectedAPI === "biolink") {
-                console.log("biolink!");
-                result_json = spawn(pythonPathBio, ['data_extract_Combine.py', Url, 1]);
               }
-              result_json.stdout.on('data', function (data) {
+              else {
+                let getJson;
+                let result_json;
+                let result2;
+                console.log("enter real time code! ", selectedAPI);
+                if (selectedAPI === "acm") {
+                  console.log("acm!");
+                  result_json = spawn(pythonPathACM, ['data_extract_ACM.py', Url]);
 
-                console.log(data.toString());
-                getJson = data.toString();
-                getJson = getJson.replace(/'/g, '"');
-                result_json = JSON.parse(getJson);
-                return res.json(result_json);
-              });
-              result_json.stderr.on('data', function (data) {
-                console.log(data.toString());
-              });
-              result_json.on('close', (code) => {
-                console.log(`child process exited with code ${code}`);
-              });
+                  result_json.stdout.on('data', function (data) {
+                    console.log(data.toString());
+                    getJson = data.toString();
+                    getJson = getJson.replace(/'/g, '"');
+                    result_json = JSON.parse(getJson);
+                    return res.json(result_json);
+                  });
+                  result_json.stderr.on('data', function (data) {
+                    console.log(data.toString());
+                  });
+                  result_json.on('close', (code) => {
+                    console.log(`child process exited with code ${code}`);
+                  });
+                } else if (selectedAPI === "biolink") {
+                  console.log("biolink!");
+                  result_json = spawn(pythonPathBio, ['data_extract_Combine.py', Url, 1]);
+
+                  result_json.stdout.on('data', function (data) {
+                    console.log(data.toString());
+                    getJson = data.toString();
+                    getJson = getJson.replace(/'/g, '"');
+                    result_json = JSON.parse(getJson);
+                    return res.json(result_json);
+                  });
+                  result_json.stderr.on('data', function (data) {
+                    console.log(data.toString());
+                  });
+                  result_json.on('close', (code) => {
+                    console.log(`child process exited with code ${code}`);
+                  });
+                } else {
+                  console.log("combine!");
+                  result_json = spawn(pythonPathBio, ['data_extract_Combine.py', Url, 1]);
+                  result_json.stdout.on('data', function (data) {
+                    console.log(data.toString());
+                    getJson = data.toString();
+                    result2 = spawn(pythonPathACM, ['data_extract_ACM.py', Url]);
+
+                    let json2;
+                    result2.stdout.on('data', function (data2) {
+                      console.log(data2.toString());
+                      json2 = data2.toString();
+
+                      let willSend = "{\'biolink\': ";
+                      willSend += getJson;
+                      willSend += ", \'acm\': " + json2 + "}";
+
+                      willSend = willSend.replace(/'/g, '"');
+                      result_json = JSON.parse(willSend);
+                      return res.json(willSend);
+                    });
+                    getJson = getJson.replace(/'/g, '"');
+                    result_json = JSON.parse(getJson);
+                    return res.json(result_json);
+                  });
+                  result_json.stderr.on('data', function (data) {
+                    console.log(data.toString());
+                  });
+                  result_json.on('close', (code) => {
+                    console.log(`child process exited with code ${code}`);
+                  });
+
+                } // end logic by selectedAPI
+              }// end if no json in mongoDB
             }
-          }
-        })
-      }
-    });
-  });
-});
+          })
+        } // end if edit collection isn't
+      });
+    } // for single api
+    else {
+      // this is only for double api : only real time right now
+      console.log("combine!");
+      result_json = spawn(pythonPathBio, ['data_extract_Combine.py', Url, 1]);
+      result_json.stdout.on('data', function (data) {
+        // console.log(data.toString());
+        getJson = data.toString();
+        result2 = spawn(pythonPathACM, ['data_extract_ACM.py', Url]);
 
+        let json2;
+        result2.stdout.on('data', function (data2) {
+          // console.log(data2.toString());
+          json2 = data2.toString();
+
+          let willSend = "{ 'biolink': ";
+          willSend += getJson;
+          willSend += ", 'acm': " + json2 + "}";
+
+
+          willSend = willSend.replace(/'/g, '"');
+          result_json = JSON.parse(willSend);
+          // console.log(willSend);
+          return res.json(result_json);
+        });
+      });
+      result_json.stderr.on('data', function (data) {
+        console.log(data.toString());
+      });
+      result_json.on('close', (code) => {
+        console.log(`child process exited with code ${code}`);
+      });
+    }
+  });
+  // }
+});
 
 app.post("/create", (req, res) => { // req.body는 JSON 값, 편집 저장용 라우터
   console.log(req.body);
@@ -266,6 +350,7 @@ app.post("/create", (req, res) => { // req.body는 JSON 값, 편집 저장용 �
 
 // img history
 app.post("/img", async (req, res) => {
+  console.log("img post");
   const { imgSrc, nctID } = req.body;
 
   const data1 = fs.readFileSync(`./img-url.txt`, 'utf8');
@@ -283,7 +368,7 @@ app.post("/img", async (req, res) => {
     return nct !== nctID
   });
 
-  console.log(idx);
+
 
   if (flag) { // 중복이 일어났다면 중복된거 제거
     images.splice(idx, 1);
@@ -333,7 +418,7 @@ app.post("/crawling", async (req, res) => {
   const post = req.body;
   let NCTID = post.url;
   let getResult;
-  const result = spawn('python', ['crawling.py', NCTID]);
+  const result = spawn(pythonPathACM, ['crawling.py', NCTID]);
   result.stdout.on('data', function (data) {
     // console.log(data.toString());
     getResult = data.toString();
