@@ -5,11 +5,6 @@ import requests
 import re
 import boto3
 import json
-#pip install sumy
-# Importing the parser and tokenizer
-#pip install nltk
-#download only once 
-#nltk.download('punkt')
 import math
 import sys
 #multithreading part, no need for extra pip install
@@ -95,10 +90,11 @@ from pymongo import MongoClient
 ############### Versions 1.1.1 ################
 # optimized population_box
 
-#################################################################################################################################################
-#################################################################################################################################################
+
 #################################################################################################################################################
 
+# 환경변수 처리
+# 따로 보관하고 있는 private 정보들을 가져온다.
 BASE_DIR = Path(__file__).resolve().parent
 
 secret_file = os.path.join(BASE_DIR, 'secrets.json') # secrets.json 파일 위치를 명시
@@ -119,12 +115,20 @@ accessSecretKey = get_secret("aws_secret_access_key")
 region = get_secret("region_name")
 comprehend = boto3.client('comprehend', aws_access_key_id=accessKey, aws_secret_access_key=accessSecretKey, region_name= region)
 
+
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
-def acm_Entities(Text):
+
+def acm_Entities(interventionDesciprtion):
+    """
+    ACM API를 사용한다.
+        Args:
+            interventionDesciprtion `str`: 한 중재군의 intervention description 전 문장
+        Returns:
+            ACM 결과 `json`
+    """
+
     try:
-        url1 = 'http://61.77.42.239:8100/asp/get_entitiesv2/?query=' + Text
+        url1 = 'http://61.77.42.239:8100/asp/get_entitiesv2/?query=' + interventionDesciprtion
         response = requests.get(url1)
         a = json.loads(response.content)
         return a
@@ -132,32 +136,35 @@ def acm_Entities(Text):
         b = {'Entities' : ''}
         return b
 
-#################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
-def removearticles(text):
-    articles = {'A': '','a': '', 'An': '','an':'', 'and':'', 'The': '','the':''}
-    rest = [word for word in text.split() if word not in articles]
-    return ' '.join(rest)
 
+#################################################################################################################################################
 def get_title(response):
+    """
+    임상시험설계의 제목을 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: title
+    """
     title = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['BriefTitle']
 
     if("\"" in title):
-        title = re.sub('\"', '', title)
-        change_dictionary = "{%s : %s%s%s}" % ('"Title"', '"', title, '"')
-    else:
-        change_dictionary = "{%s : %s%s%s}" % ('"Title"', '"', title, '"')
-    #json_acchange_dictionaryceptable_string = .replace("'", "\"")
-    #d = json.loads(json_acceptable_string)
+        title = re.sub('\"', '', title)    
+
+    change_dictionary = "{%s : %s%s%s}" % ('"Title"', '"', title, '"')
     result_dictionary = json.loads(change_dictionary)
-    #print(type(result_dictionary))
     return result_dictionary
 
-#################################################################################################################################################
-#################################################################################################################################################
+
 #################################################################################################################################################
 def get_population_box(response):   
+    """
+    피험자에 대한 정보를 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            dic_information `dict`: 피험자의 condition, 모집된 수, 최소 나이, 최대 나이, 성별, 건강한지
+    """
 
     information = {
         "Condition" : "",
@@ -186,10 +193,16 @@ def get_population_box(response):
     dic_information = {'PopulationBox' : information}
     return dic_information
 
-#################################################################################################################################################
-#################################################################################################################################################
+
 #################################################################################################################################################
 def get_calc_date(response):
+    """
+    임상시험 총 연구기간을 계산한다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            return_dictionary `dict`: 끝날짜 - 시작날짜
+    """
 
     #get the api resourse
     start_time_api = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['StatusModule']['StartDateStruct']['StartDate']
@@ -200,8 +213,6 @@ def get_calc_date(response):
     #change the month->the integer num
     datetime_objecta, datetime_objectb = datetime.datetime.strptime(start_date[0], "%B"), datetime.datetime.strptime(end_date[0], "%B")
     start_month, end_month = datetime_objecta.month, datetime_objectb.month
-    #print(start_month)
-    #print(end_month)
 
     for value, item in enumerate(start_date):
         if len(item) > 3:
@@ -213,15 +224,20 @@ def get_calc_date(response):
 
     #calc the time
     require_time = (int(convert_end_date) - int(convert_start_date))*12 + (end_month-start_month)
-    #print out the total month
-    #print(str(require_time) + " months required to complete")
     return_dictionary = {"CompleteTime" : require_time}
     return return_dictionary
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
+
+
 def get_drug_time(response):
+    """
+    각 약물별 복용기간을 계산한다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            return_dictionary `dict[str, dict[str, list]]`: 약물별 복용기간
+    """
     protocolsection = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']
 
     detail_description = ""
@@ -260,7 +276,6 @@ def get_drug_time(response):
     Arm_group = {}
     InterventionDrug = {'ArmGroupList' : []}
 
-
     for arms in arm_name:
         try:
             Arm_group[arms['ArmGroupLabel']] = {'ArmGroupLabel' : '','ArmGroupType' : '', 'ArmGroupDescription' : '', 'InterventionList' : '', 'InterventionDescription' : []}
@@ -287,7 +302,6 @@ def get_drug_time(response):
         except KeyError:
             pass
 
-    #print(Arm_group)
 
     for i in range(len(drug_list)):
         if ' plus ' in drug_list[i]['InterventionName'].lower():
@@ -317,9 +331,7 @@ def get_drug_time(response):
         else:
             if drug_list[i]['InterventionName'].lower().replace('drug: ', "") not in drug:
                 drug.append(drug_list[i]['InterventionName'].lower().replace('drug: ', ""))
-            drug_dict[drug_list[i]['InterventionName'].lower().replace('drug: ', "")] = {'DrugName' : '','Duration' : '', 'Dosage' : '', 'HowToTake' : '', 'OtherName' : [],"Type": ''} 
-    #print(drug)
-    # print(drug_dict)
+            drug_dict[drug_list[i]['InterventionName'].lower().replace('drug: ', "")] = {'DrugName' : '','Duration' : '', 'Dosage' : '', 'HowToTake' : '', 'OtherName' : []} 
 
     for value in protocolsection['ArmsInterventionsModule']['InterventionList']['Intervention']:
         for i in drug_dict:
@@ -330,46 +342,29 @@ def get_drug_time(response):
                 except KeyError:
                     pass
 
-
-
-
     dummy_entity = ["(",")"]
     temp13 = detail_description + brief_description
     temp13 = temp13.replace(","," ").split(". ")
     slpit = []
     
 
-
-
-
-
-
     for i in temp13:
         for dummy in dummy_entity:
             i = i.replace(dummy,"")
         slpit.append(i.replace("-", " - ").replace("/", " / "))
 
-    # for dummy in dummy_entity:
-    #     for i in temp13:
-    #         slpit.append(i.replace("-", " - ").replace("/", " / "))
- ########################################################################################
- # 밑에 코드는 description부분에 약물 복용 주기, 약물 복용량을 찾아서 넣는 코드를 작성함# ## 얘는 Druf Dict를 이용해서 하는게 아니라서 상관 없을 것 같음. >> 마지막에 Dictionary의 키값을 Drug의 내용으로하는데,
- #결론적으로는 Key값 바탕으로 Value 값으로 약물명을 추가하기 때문에, 이때 추가할때 동시에 다른 이름까지넣으면 될 것 같음.
- ######################################################################################## 
+   
  ########################################################################################
  # 밑에 코드는 description부분에 약물 복용 주기, 약물 복용량을 찾아서 넣는 코드를 작성함# ## 얘는 Druf Dict를 이용해서 하는게 아니라서 상관 없을 것 같음. >> 마지막에 Dictionary의 키값을 Drug의 내용으로하는데,
  #결론적으로는 Key값 바탕으로 Value 값으로 약물명을 추가하기 때문에, 이때 추가할때 동시에 다른 이름까지넣으면 될 것 같음.
  ######################################################################################## 
     for i1 in range(len(slpit)):     #시간 관련된 내용
         temp = slpit[i1].lower().split()
-        # print(temp)
+        
         for i2 in range(len(drug)):
-            #print(drug[i2],"----------------------------", slpit[i1])
             if drug[i2] in slpit[i1].lower() or drug[i2] + ' ' in slpit[i1].lower():
-                #print(temp)
                 
                 try:
-                    #print(drug[i2], slpit[i1].lower())
                     drug_index = temp.index(drug[i2].split()[0])
                     for i5 in range(len(time_label)):
                         for i3 in range(drug_index-1, -1, -1):
@@ -462,30 +457,6 @@ def get_drug_time(response):
                     right = 0
                 except:
                     pass
-    #print(drug_dict)
-#################################################################################
-#밑에 코드는 queue써서 ArmgroupDescription쪽에서 기간관련 내용 찾는 코드(폐기각)#
-#################################################################################
-
-##########################################################################
-#밑에 코드는 queue써서 intervention쪽에서 기간관련 내용 찾는 코드(폐기각)#
-##########################################################################
-
-    # protocolsection = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']
-
-    # for value in protocolsection['ArmsInterventionsModule']['InterventionList']['Intervention']:
-    #     value_line = value['InterventionDescription'].split('. ')
-    #     for line in value_line:
-    #         temp = line.split()
-    #         for i2 in drug_dict:
-    #             for i1 in range(len(temp)):
-    #                 if (temp[i1] in i2):
-    #                     dosage_que.put(temp[i1])
-    #                 for i3 in amount:
-    #                     if i3 in temp[i1]:
-    #                         dosage_que.put( temp[i1-1] + temp[i1])
-    # for i in range(dosage_que.qsize()):
-    #     print(dosage_que.get())
 
 ######################################################################
 #밑에 코드는 comprehend써서 intervention쪽에서 복용량, 기간 찾는 코드#
@@ -865,21 +836,20 @@ def get_drug_time(response):
 
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
 def get_population_ratio(response):
-
+    """
+    중재군별 인원 비율을 계산한다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            return_population_ratio_dictionary `dict`: 중재군별 인원 비율
+    """
     #test example 1 with n=~ https://www.clinicaltrials.gov/ct2/show/NCT03507790?recrs=ab&type=Intr&cond=Alzheimer+Disease&draw=2
     #test example 2 without n=~ https://www.clinicaltrials.gov/ct2/show/NCT02285140?term=factorial&draw=3
 
     #save the detail of armDescription
     population_list, save_value, rate, rateString, count = [], [], [], '', 0
 
-    #if there is no "n=~~~"
-    #count = 0
-    #get the total participates number
-    #total = int(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['EnrollmentInfo']['EnrollmentCount'])
-    #save_total = int(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['EnrollmentInfo']['EnrollmentCount'])
     #get the detail of each arm group
 
     try:
@@ -896,7 +866,6 @@ def get_population_ratio(response):
                 start_index=re.search("n=", population_list[i]).start()
                 #get the exact value
                 extracted_string= population_list[i][start_index:start_index+length_word]
-                #print(extracted_string)
                 #take out the value of extracted, for example if n=40, get 40 and minus from the total
                 save_value.append([int(num) for num in re.findall(r"\d+", extracted_string)][0])
 
@@ -931,9 +900,16 @@ def get_population_ratio(response):
     return return_population_ratio_dictionary
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
+
+
 def get_washout(response):
+    """
+    휴약기간을 계산한다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 휴약기간
+    """
     period = ['washout','wash-out','recovery','run-in','taper','wash']
     times = ['day','days','week','weeks','month','months','year','years']
     line = ""
@@ -1003,27 +979,15 @@ def get_washout(response):
                 washout_index = line.index(period[j]) + 5 #-> washout으로 인덱싱
                 washout_index_check = line.index(period[j])
 
-                #print(line_list[washout_index-1])
-
     #without washout period 잡기
     without = "without"
     count = 0
     for i in range(7):
-        #print(line[washout_index_check -(i+2)])
-        #print("======")
-        #print(without[6-i])
         if(line[washout_index_check -(i+2)] == without[6-i]):
             count = count + 1
 
     if(count==7):
         return {"WashoutPeriod" : "without washout period"}
-
-    # if(line_list[washout_index_check -8]=='without'):
-    #     return {"WashoutPeriod" : "without washout period"}
-                # if('without' in line):
-                #     return {"washout_period" : ""} #without있는 문장 제외(수정 필요)
-                # else:
-                #     washout_index = line.index(period[j]) #period관련 단어의(첫 알파벳) index파악--times 뽑기 위해서
 
     #comprehend 돌리기
     #comprehend = boto3.client('comprehend') #주석 하기!!
@@ -1050,19 +1014,26 @@ def get_washout(response):
             min = abs(washout_index - index[i])
             min_index = i
     
-    #dic형태로 json파일 생성
+    #dict형태로 json파일 생성
     string_result = value[min_index]
     change_dictionary = "{%s : %s%s%s}" % ('"WashoutPeriod"', '"', string_result, '"')
     result_dictionary = json.loads(change_dictionary)
     return(result_dictionary)
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
+
+
 def get_officialTitle(response):
+    """
+    임상시험의 official title을 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 official title
+    """
     title = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['OfficialTitle']
     string_result = title
-    #print(title)
+
     if("\"" in string_result):
         string_result = re.sub('\"', '', string_result)
         change_dictionary = "{%s : %s%s%s}" % ('"OfficialTitle"', '"', string_result, '"')
@@ -1072,9 +1043,16 @@ def get_officialTitle(response):
     return(result_dictionary)
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
+
+
 def get_objective(response):
+    """
+    임상시험의 objective을 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 objective
+    """
     summary = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DescriptionModule']["BriefSummary"]
     purpose = ['objective', 'purpose', 'aim', 'evaluate', 'measure', 'intention', 'target', 'goal', 'object', 'idea', 'desire']
     list = summary.split('.')
@@ -1097,9 +1075,16 @@ def get_objective(response):
     return(result_dictionary)
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
+
+
 def get_maksing(response):
+    """
+    임상시험의 masking한 정도를 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 masking
+    """
     try:
         masking = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignMaskingInfo']['DesignMasking']
         string_result = masking
@@ -1111,9 +1096,16 @@ def get_maksing(response):
     return(result_dictionary)
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
+
+
 def get_allocation(response):
+    """
+    임상시험의 allocation 정도를 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 allocation
+    """
     try:
         allocation = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignAllocation']
         string_result = allocation
@@ -1129,9 +1121,16 @@ def get_allocation(response):
 
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
+
+
 def get_enrollment(response):
+    """
+    임상시험에 참여한 피험자 수를 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 참여한 피험자 수
+    """
     enrollment = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['EnrollmentInfo']['EnrollmentCount']
     string_result = enrollment
     change_dictionary = "{\"Enrollment\" : " + '"' + string_result + '"' + "}"
@@ -1139,9 +1138,16 @@ def get_enrollment(response):
     return(result_dictionary)
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
+
+
 def get_designModel(response):
+    """
+    임상시험의 design model를 가져온다. Single, Parallel, Crossover 등이 있음
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 design model
+    """
     try:
         model = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignInterventionModel']
         string_result = model
@@ -1153,9 +1159,16 @@ def get_designModel(response):
     return(result_dictionary)
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
+
+
 def get_interventionName(response):
+    """
+    임상시험의 intervention 이름을 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 design model
+    """
     interventionName = []
     type = ""
     
@@ -1185,8 +1198,7 @@ def get_interventionName(response):
     return(result_dictionary)
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
+
 
 def get_interventionType(response):
     InterventionType = {'Type' : []}
@@ -1198,6 +1210,13 @@ def get_interventionType(response):
 
 
 def getStudyType(response):
+    """
+    임상시험의 intervention 이름을 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            studyType `str`: 임상시험의 type | Interventional or Observational
+    """
     studyType = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['StudyType']
     return studyType
 
@@ -1208,20 +1227,21 @@ class StudyTypeError(Exception):
     def __str__(self):
         return self.message 
 
-#################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
+
 #################################################################################################################################################
 #################################################################################################################################################
 #################################################################################################################################################
 def wrapper(func, arg, queue):
-        queue.put(func(arg))
+    queue.put(func(arg))
 
 def request_call(url):
-
+    """
+    한 개의 임상시험에 대한 정보를 추출한다.
+        Args:
+            url `str`: 한 임상시험에 대한 url
+        Returns:
+            request_call `dict | json`: 추출된 정보
+    """
     try:
         try:
             expr = re.search("NCT[0-9]+", url)
@@ -1289,11 +1309,10 @@ def request_call(url):
         request_call.update(intervention_name)
         request_call.update(NCTId)
         request_call.update(intervention_type.get())
-        #request_call.update(_id)
+        
         request_call = {**_id, **request_call}
 
 
-        #print(request_call['population_ratio'])
         script_dir = os.path.dirname(__file__)
         file_path = os.path.join(script_dir, f"NCT_ID_database/{response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']}.json")
         with open(file_path, 'w') as json_file:
@@ -1305,8 +1324,6 @@ def request_call(url):
 # #위의 오류케이스 발견됨 >> 2가지 수정 
 # # 1.만약 약물이 A and B로 묶일때 이를 쪼개는 코드로 수정함
 # # 2.ArmGroup Description부분에서도 약물명 관련된 내용을 수정할 수 있도록 코드를 변형함
-# url = "https://clinicaltrials.gov/ct2/show/NCT04577378"
-# print(request_call(url))
 
 if __name__ == "__main__":
     # sys.argv[1]은 url임
@@ -1323,8 +1340,7 @@ if __name__ == "__main__":
     
     inputFromUser = str(sys.argv[1])
     response = ""
-    # if(inputFromUser.find("http") == -1):
-    #     inputFromUser = "https://www.clinicaltrials.gov/api/query/full_studies?expr=" + inputFromUser +"&fmt=json"
+
     if('NCT' in inputFromUser):
         try:
             expr = re.search("NCT[0-9]+", inputFromUser)
