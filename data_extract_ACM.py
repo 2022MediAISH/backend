@@ -296,7 +296,7 @@ def get_drug_time(response):
 
             for data in temp:
                 drug.append(data.lower().replace('drug: ', ""))
-                drug_dict[data.lower().replace('drug: ', "")] = {'DrugName' : '','Duration' : '', 'Dosage' : '', 'HowToTake' : '', 'OtherName' : []} 
+                drug_dict[data.lower().replace('drug: ', "")] = {'DrugName' : '','Duration' : '', 'Dosage' : '', 'HowToTake' : '', 'OtherName' : [], "Type": ''} 
 
         elif ' vs ' in drug_list[i]['InterventionName'].lower():
 
@@ -304,7 +304,7 @@ def get_drug_time(response):
 
             for data in temp:
                 drug.append(data.lower().replace('drug: ', ""))
-                drug_dict[data.lower().replace('drug: ', "")] = {'DrugName' : '','Duration' : '', 'Dosage' : '', 'HowToTake' : '', 'OtherName' : []} 
+                drug_dict[data.lower().replace('drug: ', "")] = {'DrugName' : '','Duration' : '', 'Dosage' : '', 'HowToTake' : '', 'OtherName' : [],"Type": ''} 
 
         elif ' and ' in drug_list[i]['InterventionName'].lower():
 
@@ -312,12 +312,12 @@ def get_drug_time(response):
 
             for data in temp:
                 drug.append(data.lower().replace('drug: ', ""))
-                drug_dict[data.lower().replace('drug: ', "")] = {'DrugName' : '','Duration' : '', 'Dosage' : '', 'HowToTake' : '', 'OtherName' : []}     
+                drug_dict[data.lower().replace('drug: ', "")] = {'DrugName' : '','Duration' : '', 'Dosage' : '', 'HowToTake' : '', 'OtherName' : [],"Type": ''}     
         
         else:
             if drug_list[i]['InterventionName'].lower().replace('drug: ', "") not in drug:
                 drug.append(drug_list[i]['InterventionName'].lower().replace('drug: ', ""))
-            drug_dict[drug_list[i]['InterventionName'].lower().replace('drug: ', "")] = {'DrugName' : '','Duration' : '', 'Dosage' : '', 'HowToTake' : '', 'OtherName' : []} 
+            drug_dict[drug_list[i]['InterventionName'].lower().replace('drug: ', "")] = {'DrugName' : '','Duration' : '', 'Dosage' : '', 'HowToTake' : '', 'OtherName' : [],"Type": ''} 
     #print(drug)
     # print(drug_dict)
 
@@ -767,6 +767,8 @@ def get_drug_time(response):
                                         pass              
             except KeyError:
                 pass        
+    # for i in range(len(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'])):
+    #     type = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][i]['InterventionType']
 
     for value1 in return_dictionary['DrugInformation']['ArmGroupList']:
         medi_loc = 0
@@ -1186,6 +1188,15 @@ def get_interventionName(response):
 #################################################################################################################################################
 #################################################################################################################################################
 
+def get_interventionType(response):
+    InterventionType = {'Type' : []}
+    for i in range(len(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'])):
+        type = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][i]['InterventionType']
+        InterventionType['Type'].append(type)
+    return_dictionary = {"InterventionType" : InterventionType}
+    return return_dictionary
+
+
 def getStudyType(response):
     studyType = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['StudyType']
     return studyType
@@ -1248,10 +1259,11 @@ def request_call(url):
         NCTId = {"NCTID" : response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']}
         _id = {"_id" : response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']}
         version = {"version" : "1.7.1"}
-        washout, drug_time, population_box = Queue(), Queue(), Queue()
+        washout, drug_time, population_box,intervention_type = Queue(), Queue(), Queue(), Queue()
         Thread(target=wrapper, args=(get_washout, response, washout)).start() 
         Thread(target=wrapper, args=(get_drug_time, response, drug_time)).start() 
         Thread(target=wrapper, args=(get_population_box, response, population_box)).start() 
+        Thread(target=wrapper, args=(get_interventionType, response, intervention_type)).start() 
 
        
         if getStudyType(response) == "Observational":
@@ -1276,6 +1288,7 @@ def request_call(url):
         request_call.update(masking)
         request_call.update(intervention_name)
         request_call.update(NCTId)
+        request_call.update(intervention_type.get())
         #request_call.update(_id)
         request_call = {**_id, **request_call}
 
@@ -1292,7 +1305,7 @@ def request_call(url):
 # #위의 오류케이스 발견됨 >> 2가지 수정 
 # # 1.만약 약물이 A and B로 묶일때 이를 쪼개는 코드로 수정함
 # # 2.ArmGroup Description부분에서도 약물명 관련된 내용을 수정할 수 있도록 코드를 변형함
-# url = "https://clinicaltrials.gov/ct2/show/NCT05379179"
+# url = "https://clinicaltrials.gov/ct2/show/NCT04577378"
 # print(request_call(url))
 
 if __name__ == "__main__":
