@@ -79,6 +79,40 @@ npm start
 - modules.txt : 정보추출 코드를 실행시키는 데 필요한 모듈들
 - secrets.json : AWS 사용에 필요한, 노출되면 안 되는 값들을 저장
 ----------------------------------------------------------
+# API 설명
+- **개체명 인식기 API** : 약물명 등 다양한 엔티티 감지 ACM (Amazon Comprehend Medical) API, AC (Amazon Comprehend) API, BiolinkBert API
+- **의미역 인식기 API** : 약물명과 약물 상세정보 매핑 ACM (Amazon Comprehend Medical) API
+- **ClinicalTrials API** : ClinicalTrials 임상시험 데이터 API 
+- **Data Extract API** : 임상시험 데이터 정보 추출 후 데이터 가공 결과 JSON
+
+    
+## ClinicalTrials API 정리
+- 용도 : 임상시험 정보추출을 진행할때 NCT ID를 통해서 ClinicalTrials API에서 필요 정보들을 가지고 온다
+임상시험 데이터 API Request URL 방법
+clinicaltrials.gov/api/query/full_studies?expr= + NCT번호 + &fmt=json
+```
+Request 데이터 예시
+{
+"FullStudiesResponse":{
+  "APIVrs":"1.01.05",
+  "DataVrs":"2022:12:22 23:26:35.171",
+  "Expression":"NCT05550129",
+  "NStudiesAvail":437173,
+  "NStudiesFound":1,
+  "MinRank":1,
+  "MaxRank":1,
+  "NStudiesReturned":1,
+  "FullStudies":[임상시험 정보}
+  }
+}
+```
+## Data Extract API 정리
+- 용도 : ClinicalTrials API에서 가지고 온 정보들을 재가공하고 필요한 정보들을 정리하고 JSON 형태로 저장하여 시각화때 필요한 데이터를 제공해준다
+
+데이터베이스 접근 방법
+http://3.35.243.113:5000 + _id(JSON에 존재하는 데이터베이스 번호)
+- JSON 형태 예시에 대해서는 아래 **1) url + '/api’ [POST]** 참조
+
 ## API Call 
 url = http://3.35.243.113:5000
  
@@ -91,27 +125,27 @@ url = http://3.35.243.113:5000
 #### Response 예시
 ```
 {
-    "Allocation": "(Allocation 방법)",
-    "CompleteTime": (연구 총 수행기간),
-    "DesignModel": "(interventional 임상시험의 type)",
+    "Allocation": "(Allocation 방법 [String])",
+    "CompleteTime": (연구 총 수행기간 [Integer]),
+    "DesignModel": "(interventional 임상시험의 type [String])",
     "DrugInformation": {
         "ArmGroupList": [
             {
-                "ArmGroupDescription": "(중재군 설명)",
-                "ArmGroupLabel": "(중재군 이름)",
-                "ArmGroupType": "(중재군 종류)",
+                "ArmGroupDescription": "(중재군 설명 [String])",
+                "ArmGroupLabel": "(중재군 이름 [String])",
+                "ArmGroupType": "(중재군 종류 [String])",
                 "InterventionDescription": [
                     {
-                        "Dosage": "(약물 복용량)",
-                        "DrugName": "(약물 이름)",
-                        "Duration": "(약물 투여기간)",
-                        "HowToTake": "(약물 섭취방법)",
-                        "OtherName": [(약물의 다른 이름)]
+                        "Dosage": "(약물 복용량 [String])",
+                        "DrugName": "(약물 이름 [String])",
+                        "Duration": "(약물 투여기간 [String])",
+                        "HowToTake": "(약물 섭취방법 [String])",
+                        "OtherName": [(약물의 다른 이름  [String])]
                     }
                 ],
                 "InterventionList": {
                     "ArmGroupInterventionName": [
-                        "(중재군에서 사용하는 약물이름)",
+                        "(중재군에서 사용하는 약물이름 [String])",
                         …
                     ]
                 }
@@ -119,25 +153,25 @@ url = http://3.35.243.113:5000
             …
         ]
     },
-    "Enrollment": "(모집된 피험자 수)",
-    "InterventionName": "(사용된 약물 이름)",
-    "Masking": "(Masking 방법)",
-    "NCTID": "(임상시험설계번호)",
-    "Objective": "(임상시험 목적)",
-    "OfficialTitle": "(임상시험설계 이름)",
+    "Enrollment": "(모집된 피험자 수  [Integer])",
+    "InterventionName": "(사용된 약물 이름  [String])",
+    "Masking": "(Masking 방법 [String])",
+    "NCTID": "(임상시험설계번호  [String])",
+    "Objective": "(임상시험 목적 [String])",
+    "OfficialTitle": "(임상시험설계 이름 [String])",
     "PopulationBox": {
-        "Condition": "(임상시험에서 다루는 병/상태)",
-        "Gender": "(성별)",
-        "HealthyCondition": "(건강한 사람 모집 여부)",
-        "MaxAge": "(모집하는 피험자의 최대 나이)",
-        "MinAge": "(모집하는 피험자의 최소 나이)",
-        "Participant": "(모집된 피험자 수)"
+        "Condition": "(임상시험에서 다루는 병/상태 [String])",
+        "Gender": "(성별 [String])",
+        "HealthyCondition": "(건강한 사람 모집 여부 [String])",
+        "MaxAge": "(모집하는 피험자의 최대 나이 [String])",
+        "MinAge": "(모집하는 피험자의 최소 나이 [String])",
+        "Participant": "(모집된 피험자 수 [String])"
     },
-    "PopulationRatio": "(중재군 별 비율)",
-    "Title": "(임상시험설계 제목)",
-    "WashoutPeriod": "(휴약기간)",
-    "_id": "(임상시험설계번호)",
-    "version": "(정보추출API의 버전)"
+    "PopulationRatio": "(중재군 별 비율 [String])",
+    "Title": "(임상시험설계 제목 [String])",
+    "WashoutPeriod": "(휴약기간 [String])",
+    "_id": "(임상시험설계번호 [String])",
+    "version": "(정보추출API의 버전 [String])"
 }
 ```
 ### 2) url + '/load’ [POST]
@@ -205,3 +239,23 @@ url = http://3.35.243.113:5000
 - Pre-Training: PubMed 데이터 (21GB)
 - Fine-Tuning: ade_corpus_v2 (23516개의 약물명과 약물 부작용 데이터)
 - Labeling: 부작용에 관한 문장에서 약물명 위치를 index로 잡아서 라벨링
+
+## 1) Hugging Face 로그인
+## 2) 모델 불러오기
+```
+tokenizer = AutoTokenizer.from_pretrained("BioLinkBERT-base-finetuned-ner",model_max_length=512)
+model = AutoModelForTokenClassification.from_pretrained("BioLinkBERT-base-finetuned-ner")
+effect_ner_model = pipeline(task="ner", model=model, tokenizer=tokenizer, device=-1)
+```
+## 3) 모델 구조
+각 토큰별 ['O', 'B-DRUG', 'I-DRUG', 'B-EFFECT', 'I-EFFECT'] 중 하나를 리턴
+- O: 해당 없음
+- B-DRUG,  I-DRUG: 약물 이름
+**약물을 감지했을때 API 형태**
+```
+[
+  {'entity': 'LABEL_1', 'score': 0.98608416, 'index': 1, 'word': 'pr', 'start': 0, 'end': 2}, {'entity': 'LABEL_2', 'score': 0.98828495, 'index': 2, 'word': '##uc',    'start': 2, 'end': 4}, 
+  {'entity': 'LABEL_2', 'score': 0.987498, 'index': 3, 'word': '##alo', 'start': 4, 'end': 7}, {'entity': 'LABEL_2', 'score': 0.9862112, 'index': 4, 'word': '##pri', 'start': 7, 'end': 10}, {'entity': 'LABEL_2', 'score': 0.98280567, 'index': 5, 'word': '##de', 'start': 10, 'end': 12}
+]
+```
+Token Combine 결과: prucalopride
