@@ -1201,6 +1201,13 @@ def get_interventionName(response):
 
 
 def get_interventionType(response):
+    """
+    임상시험의 intervention type을 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: intervention type
+    """
     InterventionType = {'Type' : []}
     for i in range(len(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'])):
         type = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][i]['InterventionType']
@@ -1257,7 +1264,7 @@ def request_call(url):
         NCTId = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']
 
         script_dir = os.path.dirname(__file__)
-        file_path = os.path.join(script_dir, f'NCT_ID_database/{NCTId}.json')
+        file_path = os.path.join(script_dir, f'NCT_ID_database_acm/{NCTId}.json')
 
         with open(file_path) as json_file:
             data = json.load(json_file)
@@ -1314,7 +1321,7 @@ def request_call(url):
 
 
         script_dir = os.path.dirname(__file__)
-        file_path = os.path.join(script_dir, f"NCT_ID_database/{response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']}.json")
+        file_path = os.path.join(script_dir, f"NCT_ID_database_acm/{response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']}.json")
         with open(file_path, 'w') as json_file:
                 json.dump(request_call, json_file,sort_keys=True, indent=4)
 
@@ -1372,7 +1379,7 @@ if __name__ == "__main__":
 
     try:
         ##Loading or Opening the json file
-        with open("./NCT_ID_database/"+file_name) as file:
+        with open("./NCT_ID_database_acm/"+file_name) as file:
             file_data = json.load(file)
 
         if isinstance(file_data, list):
