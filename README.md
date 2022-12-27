@@ -14,7 +14,7 @@ $ cd backend
 $ npm init
 $ npm install
 $ python -m pip install -U pip
-$ pip install -r requirements.txt
+$ pip install -r modules.txt
 ```
 #### 2. secrets.json 최상단에 가져오기    
 해당 파일 안에는 다음의 내용들이 있다.
@@ -75,7 +75,8 @@ npm start
 - data_extract_ACM.py : ACM api와 ClinicalTrials api로 정보를 추출, json형태로 내보냄
 - data_extract_Biolinkbert.py : ACM api와 ClinicalTrials api와 Biolinkbert api로 정보를 추출, json형태로 내보냄
 - img-url.txt와 img-nct.txt: 모식도 생성시 만들어지는 모식도 이미지와 임상시험번호 기록
-- index.js : 모든 API
+- index.js : 모든 API Call들을 관리.  
+  - 실시간으로 정보를 추출, DB에 있는 원본/편집본 정보 가져오기, 검색 기록 가져오기, 임상시험설계 원문 크롤링하는 라우터를 관리
 - modules.txt : 정보추출 코드를 실행시키는 데 필요한 모듈들
 - secrets.json : AWS 사용에 필요한, 노출되면 안 되는 값들을 저장
 ----------------------------------------------------------
@@ -112,8 +113,8 @@ Request 데이터 예시
 데이터베이스 접근 방법
 http://3.35.243.113:5000 + _id(JSON에 존재하는 데이터베이스 번호)
 - JSON 형태 예시에 대해서는 아래 **1) url + '/api’ [POST]** 참조
-
-## API Call 
+---
+# API Call 
 url = http://3.35.243.113:5000
  
 ### 1) url + '/api’ [POST]
@@ -207,7 +208,7 @@ url = http://3.35.243.113:5000
 ```
 { “message”: “Good” }
 ```
-### 5) url + `/crawling` [POST]
+### 5) url + '/crawling' [POST]
 임상시험 원문 내용 태그들을 추출하여 전달
 
 #### Request 예시
