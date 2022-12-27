@@ -3,12 +3,6 @@ import requests
 import re
 import boto3
 import json
-#pip install sumy
-# Importing the parser and tokenizer
-# Import the LexRank summarizer
-#pip install nltk
-#download only once 
-#nltk.download('punkt')
 import math
 import sys
 #multithreading part, no need for extra pip install
@@ -129,6 +123,13 @@ record_all_converted_temp = []
 record_all_converted_temp_arm = []
 
 def acm_Entities(Text):
+    """
+    ACM API를 사용한다.
+        Args:
+            interventionDesciprtion `str`: 한 중재군의 intervention description 전 문장
+        Returns:
+            ACM 결과 `json`
+    """
     try:
         url1 = 'http://61.77.42.239:8100/asp/get_entitiesv2/?query=' + Text
         response = requests.get(url1)
@@ -440,6 +441,13 @@ def removearticles(text):
     return ' '.join(rest)
 
 def get_title(response):
+    """
+    임상시험설계의 제목을 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: title
+    """
     title = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['BriefTitle']
 
     if("\"" in title):
@@ -458,7 +466,13 @@ def get_title(response):
 #################################################################################################################################################
 #################################################################################################################################################
 def get_population_box(response):   
-
+    """
+    피험자에 대한 정보를 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            dic_information `dict`: 피험자의 condition, 모집된 수, 최소 나이, 최대 나이, 성별, 건강한지
+    """
     information = {
         "Condition" : "",
         "Participant" : 0,
@@ -490,6 +504,13 @@ def get_population_box(response):
 #################################################################################################################################################
 #################################################################################################################################################
 def get_calc_date_biolinkbert(response):
+    """
+    임상시험 총 연구기간을 계산한다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            return_dictionary `dict`: 끝날짜 - 시작날짜
+    """
 
     #get the api resourse
     start_time_api, end_time_api = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['StatusModule']['StartDateStruct']['StartDate'], response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['StatusModule']['CompletionDateStruct']['CompletionDate']
@@ -518,6 +539,13 @@ def get_calc_date_biolinkbert(response):
 
 
 def get_calc_date_acm_only(response):
+    """
+    임상시험 총 연구기간을 계산한다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            return_dictionary `dict`: 끝날짜 - 시작날짜
+    """
 
     #get the api resourse
     start_time_api = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['StatusModule']['StartDateStruct']['StartDate']
@@ -546,9 +574,14 @@ def get_calc_date_acm_only(response):
     return_dictionary = {"CompleteTime" : require_time}
     return return_dictionary
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
 def get_drug_time_acm_only(response):
+    """
+    각 약물별 복용기간을 계산한다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            return_dictionary `dict[str, dict[str, list]]`: 약물별 복용기간
+    """
     protocolsection = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']
 
     detail_description = ""
@@ -1191,7 +1224,13 @@ def get_drug_time_acm_only(response):
 #################################################################################################################################################
 #################################################################################################################################################
 def get_drug_time_biolink(response):
-    
+    """
+    각 약물별 복용기간을 계산한다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            return_dictionary `dict[str, dict[str, list]]`: 약물별 복용기간
+    """
 
     drugs = biolink_intervention(response)
     change_inter = (convert_to_original(drugs))
@@ -1871,7 +1910,13 @@ def get_drug_time_biolink(response):
 #################################################################################################################################################
 #################################################################################################################################################
 def get_population_ratio(response):
-
+    """
+    중재군별 인원 비율을 계산한다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            return_population_ratio_dictionary `dict`: 중재군별 인원 비율
+    """
     #test example 1 with n=~ https://www.clinicaltrials.gov/ct2/show/NCT03507790?recrs=ab&type=Intr&cond=Alzheimer+Disease&draw=2
     #test example 2 without n=~ https://www.clinicaltrials.gov/ct2/show/NCT02285140?term=factorial&draw=3
 
@@ -1935,9 +1980,14 @@ def get_population_ratio(response):
 
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
 def get_washout_biolink(response):
+    """
+    휴약기간을 계산한다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 휴약기간
+    """
     period = ['washout','wash-out','recovery','run-in','taper']
     times = ['day','days','week','weeks','month','months','year','years']
     line = ""
@@ -2049,6 +2099,13 @@ def get_washout_biolink(response):
 
 
 def get_washout_acm_only(response):
+    """
+    휴약기간을 계산한다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 휴약기간
+    """
     period = ['washout','wash-out','recovery','run-in','taper','wash']
     times = ['day','days','week','weeks','month','months','year','years']
     line = ""
@@ -2171,9 +2228,14 @@ def get_washout_acm_only(response):
     result_dictionary = json.loads(change_dictionary)
     return(result_dictionary)
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
 def get_officialTitle(response):
+    """
+    임상시험의 official title을 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 official title
+    """
     title = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['OfficialTitle']
     string_result = title
     if("\"" in string_result):
@@ -2186,9 +2248,14 @@ def get_officialTitle(response):
 
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
 def get_objective(response):
+    """
+    임상시험의 objective을 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 objective
+    """
     summary = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DescriptionModule']["BriefSummary"]
     purpose = ['objective', 'purpose', 'aim', 'evaluate', 'measure', 'intention', 'target', 'goal', 'object', 'idea', 'desire']
     list = summary.split('.')
@@ -2212,9 +2279,14 @@ def get_objective(response):
 
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
 def get_maksing_biolink(response):
+    """
+    임상시험의 masking한 정도를 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 masking
+    """
     masking = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignMaskingInfo']['DesignMasking']
     string_result = masking
     change_dictionary = "{\"Masking\" : " + '"' + string_result + '"' + "}"
@@ -2222,6 +2294,13 @@ def get_maksing_biolink(response):
     return(result_dictionary)
 
 def get_maksing_acm_only(response):
+    """
+    임상시험의 masking한 정도를 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 masking
+    """
     try:
         masking = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignMaskingInfo']['DesignMasking']
         string_result = masking
@@ -2236,6 +2315,13 @@ def get_maksing_acm_only(response):
 #################################################################################################################################################
 #################################################################################################################################################
 def get_allocation_biolink(response):
+    """
+    임상시험의 allocation 정도를 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 allocation
+    """
     allocation = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignAllocation']
     string_result = allocation
     change_dictionary = "{\"Allocation\" : " + '"' + string_result + '"' + "}"
@@ -2243,6 +2329,13 @@ def get_allocation_biolink(response):
     return(result_dictionary)
 
 def get_allocation_acm_only(response):
+    """
+    임상시험의 allocation 정도를 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 allocation
+    """
     try:
         allocation = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignAllocation']
         string_result = allocation
@@ -2255,9 +2348,14 @@ def get_allocation_acm_only(response):
     result_dictionary = json.loads(change_dictionary)
     return result_dictionary
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
 def get_enrollment(response):
+    """
+    임상시험에 참여한 피험자 수를 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 참여한 피험자 수
+    """
     enrollment = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['EnrollmentInfo']['EnrollmentCount']
     string_result = enrollment
     change_dictionary = "{\"Enrollment\" : " + '"' + string_result + '"' + "}"
@@ -2269,6 +2367,13 @@ def get_enrollment(response):
 #################################################################################################################################################
 #################################################################################################################################################
 def get_designModel_biolink(response):
+    """
+    임상시험의 design model를 가져온다. Single, Parallel, Crossover 등이 있음
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 design model
+    """
     model = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignInterventionModel']
     string_result = model
     change_dictionary = "{\"DesignModel\" : " + '"' + string_result + '"' + "}"
@@ -2276,6 +2381,13 @@ def get_designModel_biolink(response):
     return(result_dictionary)
 
 def get_designModel_acm_only(response):
+    """
+    임상시험의 design model를 가져온다. Single, Parallel, Crossover 등이 있음
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 design model
+    """
     try:
         model = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['DesignInfo']['DesignInterventionModel']
         string_result = model
@@ -2286,9 +2398,14 @@ def get_designModel_acm_only(response):
     result_dictionary = json.loads(change_dictionary)
     return(result_dictionary)
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
 def get_interventionName(response):
+    """
+    임상시험의 intervention 이름을 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: 임상시험의 design model
+    """
     interventionName = []
     type = ""
     
@@ -2318,10 +2435,30 @@ def get_interventionName(response):
     return(result_dictionary)
 
 #################################################################################################################################################
-#################################################################################################################################################
-#################################################################################################################################################
+
+def get_interventionType(response):
+    """
+    임상시험의 intervention type을 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            result_dictionary `dict`: intervention type
+    """
+    InterventionType = {'Type' : []}
+    for i in range(len(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'])):
+        type = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][i]['InterventionType']
+        InterventionType['Type'].append(type)
+    return_dictionary = {"InterventionType" : InterventionType}
+    return return_dictionary
 
 def getStudyType(response):
+    """
+    임상시험의 intervention 이름을 가져온다.
+        Args:
+            response `json`: 한 임상시험에 대한 ClinicalTrials.gov API
+        Returns:
+            studyType `str`: 임상시험의 type | Interventional or Observational
+    """
     studyType = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['StudyType']
     return studyType
 
@@ -2361,7 +2498,7 @@ def request_call(url, option):
         NCTId = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']
 
         script_dir = os.path.dirname(__file__)
-        file_path = os.path.join(script_dir, f'NCT_ID_database/{NCTId}.json')
+        file_path = os.path.join(script_dir, f'NCT_ID_database_bio/{NCTId}.json')
 
         with open(file_path) as json_file:
             data = json.load(json_file)
@@ -2386,10 +2523,11 @@ def request_call(url, option):
 
     ######################################################################################
         if(option == "0"): ##### 0은 acm만
-            washout, drug_time, population_box = Queue(), Queue(), Queue()
+            washout, drug_time, population_box,intervention_type = Queue(), Queue(), Queue(), Queue()
             Thread(target=wrapper, args=(get_washout_acm_only, response, washout)).start() 
             Thread(target=wrapper, args=(get_drug_time_acm_only, response, drug_time)).start() 
             Thread(target=wrapper, args=(get_population_box, response, population_box)).start() 
+            Thread(target=wrapper, args=(get_interventionType, response, intervention_type)).start() 
 
             if getStudyType(response) == "Observational":
                     return "It is observational"
@@ -2413,21 +2551,24 @@ def request_call(url, option):
             request_call.update(intervention_name)
             request_call.update(NCTId)
             request_call.update(_id)
+            
+            request_call.update(intervention_type.get())
             request_call = {**_id, **request_call}
 
             #print(request_call['population_ratio'])
             script_dir = os.path.dirname(__file__)
-            file_path = os.path.join(script_dir, f"NCT_ID_database/{response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']}.json")
+            file_path = os.path.join(script_dir, f"NCT_ID_database_acm/{response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']}.json")
             with open(file_path, 'w') as json_file:
                     json.dump(request_call, json_file,sort_keys=True, indent=4)
 
             return request_call
 
         elif(option == "1"): ##### 1은 biolinkbert
-            washout, drug_time, population_box = Queue(), Queue(), Queue()
+            washout, drug_time, population_box,intervention_type = Queue(), Queue(), Queue(), Queue()
             Thread(target=wrapper, args=(get_washout_biolink, response, washout)).start() 
             Thread(target=wrapper, args=(get_drug_time_biolink, response, drug_time)).start() 
             Thread(target=wrapper, args=(get_population_box, response, population_box)).start() 
+            Thread(target=wrapper, args=(get_interventionType, response, intervention_type)).start() 
 
 
             if getStudyType(response) == "Observational":
@@ -2452,11 +2593,12 @@ def request_call(url, option):
             request_call.update(intervention_name)
             request_call.update(NCTId)
             request_call.update(version)
+            request_call.update(intervention_type.get())
             request_call = {**_id, **request_call}
 
             #print(request_call['population_ratio'])
             script_dir = os.path.dirname(__file__)
-            file_path = os.path.join(script_dir, f"NCT_ID_database/{response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']}.json")
+            file_path = os.path.join(script_dir, f"NCT_ID_database_bio/{response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']}.json")
             with open(file_path, 'w') as json_file:
                     json.dump(request_call, json_file,sort_keys=True, indent=4)
 
@@ -2517,8 +2659,12 @@ if __name__ == "__main__":
 
     try:
         ##Loading or Opening the json file
-        with open("./NCT_ID_database/"+file_name) as file:
-            file_data = json.load(file)
+        if option == "0":
+            with open("./NCT_ID_database_acm/"+file_name) as file:
+                file_data = json.load(file)
+        if option == "1":
+            with open("./NCT_ID_database_bio/"+file_name) as file:
+                file_data = json.load(file)
 
         if isinstance(file_data, list):
             Collection.insert_many(file_data)
