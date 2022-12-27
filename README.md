@@ -248,9 +248,14 @@ model = AutoModelForTokenClassification.from_pretrained("BioLinkBERT-base-finetu
 effect_ner_model = pipeline(task="ner", model=model, tokenizer=tokenizer, device=-1)
 ```
 ## 3) 모델 구조
-각 토큰별 ['O', 'B-DRUG', 'I-DRUG', 'B-EFFECT', 'I-EFFECT'] 중 하나를 리턴
-- O: 해당 없음
-- B-DRUG,  I-DRUG: 약물 이름
+각 토큰별 LABEL_# 를 리턴받음
+
+- LABEL_0 : 'O' (해당 없음)
+- LABEL_1 : 'B-DRUG' (토큰화된 약물명의 첫번째 토큰)
+- LABEL_2 : 'I-DRUG' (토큰화된 약물명의 첫번째를 제외한 토큰)
+- LABEL_3 : 'B-EFFECT' (사용안함)
+- LABEL_4 : 'I-EFFECT' (사용안함)
+
 **약물을 감지했을때 API 형태**
 ```
 [
@@ -258,4 +263,34 @@ effect_ner_model = pipeline(task="ner", model=model, tokenizer=tokenizer, device
   {'entity': 'LABEL_2', 'score': 0.987498, 'index': 3, 'word': '##alo', 'start': 4, 'end': 7}, {'entity': 'LABEL_2', 'score': 0.9862112, 'index': 4, 'word': '##pri', 'start': 7, 'end': 10}, {'entity': 'LABEL_2', 'score': 0.98280567, 'index': 5, 'word': '##de', 'start': 10, 'end': 12}
 ]
 ```
+
+**Token Combine 방법**
+
+```
+def visualize_entities(sentence):
+    tokens = effect_ner_model(sentence)
+    label_list = ['O', 'B-DRUG', 'I-DRUG', 'B-EFFECT', 'I-EFFECT']
+    entities = []
+    last = 0
+    i = 0
+
+    for token in tokens:
+        label = int(token["entity"][-1])
+        if label == 1 or label == 2:  //해당 토큰의 LABEL이 LABEL_1, LABEL_2일때는 약물명에 대한 토큰이기에, 이를 합치는 과정을 진행함
+            token["label"] = label_list[label]
+            entities.append(token["word"])
+    while(last != len(entities) and last != -1):
+      for i in range(last, len(entities)):
+        if entities[i][0] == '#': // 토큰에 붙어 있는 #을 지우는 과정
+          entities[i - 1] = entities[i - 1] + entities[i][2:]
+          entities.pop(i)
+          last = i
+          break
+        elif i == len(entities) - 1 :
+          last = -1
+    
+    return entities
+```
+
 Token Combine 결과: prucalopride
+
