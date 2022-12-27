@@ -353,8 +353,8 @@ app.post("/img", async (req, res) => {
   console.log("img post");
   const { imgSrc, nctID } = req.body;
 
-  const data1 = fs.readFileSync(`./img-url.txt`, 'utf8');
-  const data2 = fs.readFileSync(`./img-nct.txt`, 'utf8');
+  const data1 = fs.readFileSync(`./searchHistory/img-url.txt`, 'utf8');
+  const data2 = fs.readFileSync(`./searchHistory/img-nct.txt`, 'utf8');
   let images = data1.split('\n');
   let ncts = data2.split('\n');
   let idx;
@@ -384,10 +384,10 @@ app.post("/img", async (req, res) => {
   const nctAryToStr = ncts.join('\n');
   const imageAryToStr = images.join('\n');
 
-  fs.writeFileSync(`./img-url.txt`, `${imageAryToStr}`, 'utf8', function (error) {
+  fs.writeFileSync(`./searchHistory/img-url.txt`, `${imageAryToStr}`, 'utf8', function (error) {
     console.log('writeFile completed');
   });
-  fs.writeFileSync(`./img-nct.txt`, `${nctAryToStr}`, 'utf8', function (error) {
+  fs.writeFileSync(`./searchHistory/img-nct.txt`, `${nctAryToStr}`, 'utf8', function (error) {
     console.log('writeFile completed');
   });
 
@@ -396,8 +396,8 @@ app.post("/img", async (req, res) => {
 
 // img history
 app.get("/img", async (req, res) => {
-  const data1 = fs.readFileSync(`./img-url.txt`, 'utf8');
-  const data2 = fs.readFileSync(`./img-nct.txt`, 'utf8');
+  const data1 = fs.readFileSync(`./searchHistory/img-url.txt`, 'utf8');
+  const data2 = fs.readFileSync(`./searchHistory/img-nct.txt`, 'utf8');
   let images = data1.split('\n');
   let ncts = data2.split('\n');
 

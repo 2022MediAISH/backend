@@ -9,3 +9,5 @@ venv/
 venPy8/
 BioLinkBERT-base-finetuned-ner/
 *.txt
+
+!BioLinkBERT-base-finetuned-ner/README.md

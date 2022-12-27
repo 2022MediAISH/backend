@@ -207,7 +207,7 @@ url = http://3.35.243.113:5000
 ```
 { “message”: “Good” }
 ```
-### 5) url + `/crawling`, body [POST]
+### 5) url + `/crawling` [POST]
 임상시험 원문 내용 태그들을 추출하여 전달
 
 #### Request 예시
@@ -224,73 +224,4 @@ url = http://3.35.243.113:5000
 ```
 { (생성된 모식도 이미지의 경로), (임상시험설계번호) }
 ```
-
-### 사용하는 API 추가 설명
-- **개체명 인식기 API** : 약물명 등 다양한 엔티티 감지
-	ACM (Amazon Comprehend Medical) API
-	AC (Amazon Comprehend) API
-	BiolinkBert API
-- **의미역 인식기 API** : 약물명과 약물 상세정보 매핑
-    ACM (Amazon Comprehend Medical) API
-
-## 자연어처리 모델 학습
-자연어처리 모델: BiolinkBert (생의학 자연어처리 모델)
-**BiolinkBert** 
-- Pre-Training: PubMed 데이터 (21GB)
-- Fine-Tuning: ade_corpus_v2 (23516개의 약물명과 약물 부작용 데이터)
-- Labeling: 부작용에 관한 문장에서 약물명 위치를 index로 잡아서 라벨링
-
-## 1) Hugging Face 로그인
-## 2) 모델 불러오기
-```
-tokenizer = AutoTokenizer.from_pretrained("BioLinkBERT-base-finetuned-ner",model_max_length=512)
-model = AutoModelForTokenClassification.from_pretrained("BioLinkBERT-base-finetuned-ner")
-effect_ner_model = pipeline(task="ner", model=model, tokenizer=tokenizer, device=-1)
-```
-## 3) 모델 구조
-각 토큰별 LABEL_# 를 리턴받음
-
-- LABEL_0 : 'O' (해당 없음)
-- LABEL_1 : 'B-DRUG' (토큰화된 약물명의 첫번째 토큰)
-- LABEL_2 : 'I-DRUG' (토큰화된 약물명의 첫번째를 제외한 토큰)
-- LABEL_3 : 'B-EFFECT' (사용안함)
-- LABEL_4 : 'I-EFFECT' (사용안함)
-
-**약물을 감지했을때 API 형태**
-```
-[
-  {'entity': 'LABEL_1', 'score': 0.98608416, 'index': 1, 'word': 'pr', 'start': 0, 'end': 2}, {'entity': 'LABEL_2', 'score': 0.98828495, 'index': 2, 'word': '##uc',    'start': 2, 'end': 4}, 
-  {'entity': 'LABEL_2', 'score': 0.987498, 'index': 3, 'word': '##alo', 'start': 4, 'end': 7}, {'entity': 'LABEL_2', 'score': 0.9862112, 'index': 4, 'word': '##pri', 'start': 7, 'end': 10}, {'entity': 'LABEL_2', 'score': 0.98280567, 'index': 5, 'word': '##de', 'start': 10, 'end': 12}
-]
-```
-
-**Token Combine 방법**
-
-```
-def visualize_entities(sentence):
-    tokens = effect_ner_model(sentence)
-    label_list = ['O', 'B-DRUG', 'I-DRUG', 'B-EFFECT', 'I-EFFECT']
-    entities = []
-    last = 0
-    i = 0
-
-    for token in tokens:
-        label = int(token["entity"][-1])
-        if label == 1 or label == 2:  //해당 토큰의 LABEL이 LABEL_1, LABEL_2일때는 약물명에 대한 토큰이기에, 이를 합치는 과정을 진행함
-            token["label"] = label_list[label]
-            entities.append(token["word"])
-    while(last != len(entities) and last != -1):
-      for i in range(last, len(entities)):
-        if entities[i][0] == '#': // 토큰에 붙어 있는 #을 지우는 과정
-          entities[i - 1] = entities[i - 1] + entities[i][2:]
-          entities.pop(i)
-          last = i
-          break
-        elif i == len(entities) - 1 :
-          last = -1
-    
-    return entities
-```
-
-Token Combine 결과: prucalopride
 
