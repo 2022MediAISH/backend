@@ -8,5 +8,7 @@ requirements*.txt
 venv/
 venPy8/
 BioLinkBERT-base-finetuned-ner/
+NCT_ID_database_bio/
+NCT_ID_database_acm/
 
 !BioLinkBERT-base-finetuned-ner/README.md

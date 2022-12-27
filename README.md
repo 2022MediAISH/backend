@@ -53,11 +53,14 @@ npm start
 ├── config/
 |   ├── dev.js
 |   ├── key.js
-|   ├── prod.js
+|   └── prod.js
 ├── NCT_ID_database_acm/
 |   └── ...
 ├── NCT_ID_database_bio
 |   └── ...
+├── searchHistory
+|   ├── img-nct.txt
+|   └── img-url.txt
 ├── .gitignore
 ├── crawling.py
 ├── data_extract_ACM.py
