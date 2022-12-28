@@ -14,8 +14,9 @@ const path = require("path");
 const DATABASE_NAME = "testdb";
 let database, collection;
 
+// python 경로 설정
 let pythonPathBio = '/home/ubuntu/22SH/2ndIntegration/backend/venPy8/bin/python';
-const pythonPathACM = '/home/ubuntu/22SH/2ndIntegration/backend/venv/bin/python3.6';
+let pythonPathACM = '/home/ubuntu/22SH/2ndIntegration/backend/venv/bin/python3.6';
 
 app.use(express.json({
   limit: '200kb'
@@ -34,7 +35,7 @@ app.get('/', function (req, res) {
 
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`Moseek app listening on port ${port}`);
   // mongoDB 연결만
   MongoClient.connect(
     config.mongoURI,
@@ -44,7 +45,6 @@ app.listen(port, () => {
         throw error;
       }
       database = client.db(DATABASE_NAME);
-      // collection = database.collection("test02");
       console.log("Connected to `" + DATABASE_NAME + "`!");
     }
   );
@@ -78,7 +78,6 @@ app.post("/load", (req, res) => { // 편집본이 존재할때 원본 로드
       if (err) throw err;
       else {
         if (result !== null) {
-          console.log(result);
           res.json(result);
         }
       }
@@ -88,13 +87,12 @@ app.post("/load", (req, res) => { // 편집본이 존재할때 원본 로드
 });
 
 
-app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본, 없으면 원본, 원본도 없으면 리얼타임
+//편집본 있으면 편집본, 없으면 원본, 원본도 없으면 실시간으로 돌려 정보추출
+app.post("/api", async (req, res) => {
   const post = req.body;
   let Url = post.url; //url은 key의 이름임
-  // let selectedArr = post.api;
   let selectedAPI = post.api;
 
-  console.log("#####", Url); // url
   let NCTID;
 
   //NCT 번호를 뽑아내기 위한 작업
@@ -104,10 +102,6 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
     let findtext = Htmltext.match("NCT[0-9]+"); //NCT를 찾아 번호를 뽑아낸다.
     NCTID = findtext[0];
   } else {
-    // NCT를 가지고 있지 않은 경우
-    // { "url": "https://www.clinicaltrials.gov/api/query/full_studies?expr=Effect%20of%20Carbamazepine%20on%20Dolutegravir%20Pharmacokinetics" }
-
-
     // URL이 이미 json 형태인 경우
     if (Url.includes("json") !== true) {
       // URL이 json이 아닌 경우
@@ -118,12 +112,10 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
       catch {
         return res.json({ "message": "It is not nctID" });
       }
-      // console.log("expr", expr);
       Url =
         "https://clinicaltrials.gov/api/query/full_studies?" +
         expr +
         "&fmt=json";
-      console.log(Url);
     }
 
     https.get(Url, (res) => {
@@ -148,8 +140,6 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
   let query = { _id: NCTID };
   let result_json;
 
-  // for (let k = 0; k < selectedArr.length; k++) {
-  // let selectedAPI = selectedArr[0];
   const options = { useUnifiedTopology: true };
 
   MongoClient.connect(config.mongoURI, options, function (err, db) {
@@ -273,13 +263,11 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
       console.log("combine!");
       result_json = spawn(pythonPathBio, ['data_extract_Combine.py', Url, 1]);
       result_json.stdout.on('data', function (data) {
-        // console.log(data.toString());
         getJson = data.toString();
         result2 = spawn(pythonPathACM, ['data_extract_ACM.py', Url]);
 
         let json2;
         result2.stdout.on('data', function (data2) {
-          // console.log(data2.toString());
           json2 = data2.toString();
 
           let willSend = "{ 'biolink': ";
@@ -289,7 +277,6 @@ app.post("/api", async (req, res) => {//get요청: 편집본 있으면 편집본
 
           willSend = willSend.replace(/'/g, '"');
           result_json = JSON.parse(willSend);
-          // console.log(willSend);
           return res.json(result_json);
         });
       });
@@ -420,9 +407,7 @@ app.post("/crawling", async (req, res) => {
   let getResult;
   const result = spawn(pythonPathACM, ['crawling.py', NCTID]);
   result.stdout.on('data', function (data) {
-    // console.log(data.toString());
     getResult = data.toString();
-    // console.log("data: ", getResult);
     res.send(getResult);
   });
   result.stderr.on('data', function (data) {
