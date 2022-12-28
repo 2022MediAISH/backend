@@ -151,21 +151,27 @@ url = http://3.35.243.113:5000 # 3.35.243.113 대신 사용자의 IP를 작성�
                         "DrugName": "(약물 이름 [String])",
                         "Duration": "(약물 투여기간 [String])",
                         "HowToTake": "(약물 섭취방법 [String])",
-                        "OtherName": [(약물의 다른 이름  [String])]
+                        "OtherName": [(약물의 다른 이름  [String list])]
                     }
                 ],
                 "InterventionList": {
                     "ArmGroupInterventionName": [
-                        "(중재군에서 사용하는 약물이름 [String])",
-                        …
+                        "(중재군에서 사용하는 약물이름)",
+                        ...[String list]
                     ]
                 }
             },
-            …
+            ...[objects]
         ]
     },
     "Enrollment": "(모집된 피험자 수  [Integer])",
     "InterventionName": "(사용된 약물 이름  [String])",
+    "InterventionType": {
+        "Type": [
+            "(intervention의 타입 ex.drug [string])",
+            ... [string list]
+        ]
+    },
     "Masking": "(Masking 방법 [String])",
     "NCTID": "(임상시험설계번호  [String])",
     "Objective": "(임상시험 목적 [String])",
@@ -177,6 +183,7 @@ url = http://3.35.243.113:5000 # 3.35.243.113 대신 사용자의 IP를 작성�
         "MaxAge": "(모집하는 피험자의 최대 나이 [String])",
         "MinAge": "(모집하는 피험자의 최소 나이 [String])",
         "Participant": "(모집된 피험자 수 [String])"
+        [Objects]
     },
     "PopulationRatio": "(중재군 별 비율 [String])",
     "Title": "(임상시험설계 제목 [String])",
@@ -236,82 +243,3 @@ url = http://3.35.243.113:5000 # 3.35.243.113 대신 사용자의 IP를 작성�
 { (생성된 모식도 이미지의 경로), (임상시험설계번호) }
 ```
 
-<<<<<<< HEAD
-### 사용하는 API 추가 설명
-- **개체명 인식기 API** : 약물명 등 다양한 엔티티 감지
-	ACM (Amazon Comprehend Medical) API
-	AC (Amazon Comprehend) API
-	BiolinkBert API
-- **의미역 인식기 API** : 약물명과 약물 상세정보 매핑
-    ACM (Amazon Comprehend Medical) API
-
-## 자연어처리 모델 학습
-자연어처리 모델: BiolinkBert (생의학 자연어처리 모델)
-**BiolinkBert** 
-- Pre-Training: PubMed 데이터 (21GB)
-- Fine-Tuning: ade_corpus_v2 (23516개의 약물명과 약물 부작용 데이터)
-- Labeling: 부작용에 관한 문장에서 약물명 위치를 index로 잡아서 라벨링
-
-## 1) Hugging Face 로그인
-## 2) 모델 불러오기
-```
-tokenizer = AutoTokenizer.from_pretrained("BioLinkBERT-base-finetuned-ner",model_max_length=512)
-model = AutoModelForTokenClassification.from_pretrained("BioLinkBERT-base-finetuned-ner")
-effect_ner_model = pipeline(task="ner", model=model, tokenizer=tokenizer, device=-1)
-```
-## 3) 모델 구조
-
-**개체명 인식 entity별 의미**
-- LABEL_0 : 'O' (해당 없음)
-- LABEL_1 : 'B-DRUG' (토큰화된 약물명의 첫번째 토큰)
-- LABEL_2 : 'I-DRUG' (토큰화된 약물명의 첫번째를 제외한 토큰)
-- LABEL_3 : 'B-EFFECT' (사용안함)
-- LABEL_4 : 'I-EFFECT' (사용안함)
-
-**개체명 인식 예시**
-- 원문: Maintenance therapy Mercaptopurine
-- 출력
-```
-[
-{'word': '[CLS]', 'score': 0.995590090751648, 'entity': 'LABEL_0', 'index': 0},
-{'word': 'maintenance', 'score': 0.9939430356025696, 'entity': 'LABEL_0', 'index': 1},
-{'word': 'therapy', 'score': 0.9953691959381104, 'entity': 'LABEL_0', 'index': 2},
-{'word': 'mercapto', 'score': 0.9881283640861511, 'entity': 'LABEL_1', 'index': 5},
-{'word': '##p', 'score': 0.988586962223053, 'entity': 'LABEL_2', 'index': 6},
-{'word': '##urine', 'score': 0.9884526133537292, 'entity': 'LABEL_2', 'index': 7},
-{'word': '[SEP]', 'score': 0.9956181049346924, 'entity': 'LABEL_0', 'index': 8}
-]
-```
-
-**Token Combine 방법**
-
-```
-def visualize_entities(sentence):
-    tokens = effect_ner_model(sentence)
-    label_list = ['O', 'B-DRUG', 'I-DRUG', 'B-EFFECT', 'I-EFFECT']
-    entities = []
-    last = 0
-    i = 0
-
-    for token in tokens:
-        label = int(token["entity"][-1])
-        if label == 1 or label == 2:  //해당 토큰의 LABEL이 LABEL_1, LABEL_2일때는 약물명에 대한 토큰이기에, 이를 합치는 과정을 진행함
-            token["label"] = label_list[label]
-            entities.append(token["word"])
-    while(last != len(entities) and last != -1):
-      for i in range(last, len(entities)):
-        if entities[i][0] == '#': // 토큰에 붙어 있는 #을 지우는 과정
-          entities[i - 1] = entities[i - 1] + entities[i][2:]
-          entities.pop(i)
-          last = i
-          break
-        elif i == len(entities) - 1 :
-          last = -1
-    
-    return entities
-```
-
-Token Combine 결과: Mercaptopurine
-
-=======
->>>>>>> 6da203bdba8cd9b5e9aa67aef32fe92b160ff478
