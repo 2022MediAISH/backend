@@ -248,19 +248,26 @@ model = AutoModelForTokenClassification.from_pretrained("BioLinkBERT-base-finetu
 effect_ner_model = pipeline(task="ner", model=model, tokenizer=tokenizer, device=-1)
 ```
 ## 3) 모델 구조
-각 토큰별 LABEL_# 를 리턴받음
 
+**개체명 인식 entity별 의미**
 - LABEL_0 : 'O' (해당 없음)
 - LABEL_1 : 'B-DRUG' (토큰화된 약물명의 첫번째 토큰)
 - LABEL_2 : 'I-DRUG' (토큰화된 약물명의 첫번째를 제외한 토큰)
 - LABEL_3 : 'B-EFFECT' (사용안함)
 - LABEL_4 : 'I-EFFECT' (사용안함)
 
-**약물을 감지했을때 API 형태**
+**개체명 인식 예시**
+- 원문: Maintenance therapy Mercaptopurine
+- 출력
 ```
 [
-  {'entity': 'LABEL_1', 'score': 0.98608416, 'index': 1, 'word': 'pr', 'start': 0, 'end': 2}, {'entity': 'LABEL_2', 'score': 0.98828495, 'index': 2, 'word': '##uc',    'start': 2, 'end': 4}, 
-  {'entity': 'LABEL_2', 'score': 0.987498, 'index': 3, 'word': '##alo', 'start': 4, 'end': 7}, {'entity': 'LABEL_2', 'score': 0.9862112, 'index': 4, 'word': '##pri', 'start': 7, 'end': 10}, {'entity': 'LABEL_2', 'score': 0.98280567, 'index': 5, 'word': '##de', 'start': 10, 'end': 12}
+{'word': '[CLS]', 'score': 0.995590090751648, 'entity': 'LABEL_0', 'index': 0},
+{'word': 'maintenance', 'score': 0.9939430356025696, 'entity': 'LABEL_0', 'index': 1},
+{'word': 'therapy', 'score': 0.9953691959381104, 'entity': 'LABEL_0', 'index': 2},
+{'word': 'mercapto', 'score': 0.9881283640861511, 'entity': 'LABEL_1', 'index': 5},
+{'word': '##p', 'score': 0.988586962223053, 'entity': 'LABEL_2', 'index': 6},
+{'word': '##urine', 'score': 0.9884526133537292, 'entity': 'LABEL_2', 'index': 7},
+{'word': '[SEP]', 'score': 0.9956181049346924, 'entity': 'LABEL_0', 'index': 8}
 ]
 ```
 
@@ -292,5 +299,5 @@ def visualize_entities(sentence):
     return entities
 ```
 
-Token Combine 결과: prucalopride
+Token Combine 결과: Mercaptopurine
 
