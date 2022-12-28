@@ -41,7 +41,13 @@ module.exports = {
 };
 ```
 
-#### 4. To run Express
+#### 4. 파이썬 경로 설정: index.js 18,19번째 줄
+```
+let pythonPathBio = '(사용자의 파이썬 경로)';
+let pythonPathACM = '(사용자의 파이썬 경로)';
+```
+
+#### 5. To run Express
 ```
 npm start
 ```
