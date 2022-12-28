@@ -53,17 +53,10 @@ app.listen(port, () => {
 const spawn = require("child_process").spawn;
 
 
-app.post("/load", (req, res) => { // 편집본이 존재할때 원본 로드
-  const NCTID = req.body.url; // body는 NCTID
-  console.log(NCTID);
-  let query = { _id: NCTID };
-  let selectedAPI = req.body.api;
-  let collectionNum;
-  if (selectedAPI === "acm") {
-    collectionNum = "ACM";
-  } else {
-    collectionNum = "ACM+Biolink";
-  }
+app.get("/load/:id", (req, res) => { // 편집본이 존재할때 원본 로드
+  const { id } = req.params; // id가 nctID임
+  let query = { _id: id };
+  let collectionNum = "ACM+Biolink";
 
   const options = { useUnifiedTopology: true };
 
@@ -238,7 +231,7 @@ app.post("/create", (req, res) => { // req.body는 JSON 값, 편집 저장용 �
     if (err) throw err;
 
     const dbo = db.db("testdb");
-    const collection = dbo.collection("edit");
+    const collection = dbo.collection("edit_ACM+Biolink");
     const query = { _id: req.body._id };
     var total = 0;
 
