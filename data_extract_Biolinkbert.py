@@ -5,8 +5,12 @@ import boto3
 import json
 #pip install sumy
 # Importing the parser and tokenizer
+from sumy.parsers.plaintext import PlaintextParser
+from sumy.nlp.tokenizers import Tokenizer
 # Import the LexRank summarizer
+from sumy.summarizers.lex_rank import LexRankSummarizer
 #pip install nltk
+import nltk
 #download only once 
 #nltk.download('punkt')
 import math
@@ -16,16 +20,14 @@ from threading import Thread
 from queue import Queue
 import os, json
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
-from pymongo import MongoClient
 ###############################################
 ################## IMPORTANT ##################
 ###############################################
 # MOVE ALL THE WAY DOWN TO CHECK HOW TO CALLL #
 ###############################################
 
-############### Versions 1.7.2 ################
-# fixed population ratio to be able to capture from brief descri
 ############### Versions 1.7.1 ################
 # added biolinkbert code
 # fixed errors in drug time
@@ -120,36 +122,55 @@ comprehend = boto3.client('comprehend', aws_access_key_id=accessKey, aws_secret_
 #################################################################################################################################################
 #################################################################################################################################################
 #################################################################################################################################################
-tokenizer = AutoTokenizer.from_pretrained("BioLinkBERT-base-finetuned-ner", model_max_length=512)
-model = AutoModelForTokenClassification.from_pretrained("BioLinkBERT-base-finetuned-ner")
-effect_ner_model = pipeline(task="ner", model=model, tokenizer=tokenizer, device=-1)
-
 recording_temp_name = ["acetaminophen", "ibuprofen", "acetylcysteine", "adenosine", "albendazole", "albutein"]
 record_all_converted_temp = []
-record_all_converted_temp_arm = []
 
-def acm_Entities(Text):
-    try:
-        url1 = 'http://61.77.42.239:8100/asp/get_entitiesv2/?query=' + Text
-        response = requests.get(url1)
-        a = json.loads(response.content)
-        return a
-    except:
-        b = {'Entities' : ''}
-        return b
-
-def visualize_entities(sentence):
+def visualize_entities(response):
+    #print(example)
+    sentence = response
     tokens = effect_ner_model(sentence)
     label_list = ['O', 'B-DRUG', 'I-DRUG', 'B-EFFECT', 'I-EFFECT']
     entities = []
     last = 0
     i = 0
+    count = 1
+    determine = ""
+    text = ""
+    replacing_text = ""
+    #s1.join(s2)
 
     for token in tokens:
         label = int(token["entity"][-1])
-        if label == 1 or label == 2:
+        if label == 1:
+          #print(token["word"])
+          if count == 0:
             token["label"] = label_list[label]
-            entities.append(token["word"])
+            entities.append(text)
+            count = 1
+          text = token["word"]
+          determine = token["word"]
+        elif label == 2:
+          #print(token["word"])
+          if "#" in token["word"]:
+            #print(token["word"])
+            replacing_text = token["word"].replace("#", "")
+            #print(replacing_text)
+            text = text + replacing_text
+            #print(text)
+          else:
+            text = text + " " + token["word"]
+
+          count = 0
+    length = len(entities)
+    #print(entities)
+    try:
+      if entities[length-1] != determine and len(determine)>3:
+        entities.append(determine)
+    except:
+      pass
+
+
+
     while(last != len(entities) and last != -1):
       for i in range(last, len(entities)):
         if entities[i][0] == '#':
@@ -166,7 +187,30 @@ def visualize_entities(sentence):
     
     return entities
 
-def biolink_intervention(response):
+##################################
+#메디아이측 ACM 받아오기
+##################################
+
+def convert_to_original(text):
+    list = []
+    list2 = []
+    for i in range(len(record_all_converted_temp)):
+        list2 = [record_all_converted_temp[i], recording_temp_name[i]]
+        list.append(list2)
+    return list
+
+
+# acetaminophen ibuprofen acetylcysteine adenosine albendazole albutein
+##################################
+#Code for BioLinkBERT2
+##################################
+
+tokenizer = AutoTokenizer.from_pretrained("BioLinkBERT-base-finetuned-ner", model_max_length=512)
+model = AutoModelForTokenClassification.from_pretrained("BioLinkBERT-base-finetuned-ner")
+effect_ner_model = pipeline(task="ner", model=model, tokenizer=tokenizer, device=0)
+
+
+def get_BERT2(response):
     converted_drugs_bern = {}
     save_acm_part_found = []
     auto_change = ["aaaaa", "bbbbb", "ccccc", "ddddd", "eeeee", "fffff", "ggggg", 'hhhhh']
@@ -177,13 +221,12 @@ def biolink_intervention(response):
     temp_name_count = 0
     left_over_found_bern2 = []
 
-    try:
-      for k in range(len(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'])):
-        intervention_name = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][k]['InterventionName'].lower()
-        intervention_description = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][k]['InterventionDescription'].lower()
-        #original_intervention_description = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][k]['InterventionDescription']
+    for k in range(len(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'])):
+        intervention_name = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][k]['InterventionName']
+        intervention_description = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][k]['InterventionDescription']
+        original_intervention_description = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][k]['InterventionDescription']
         #Check all the drug names that can be found in BERN2
-        #print(intervention_description)
+
         for j in range(len(recording_temp_name)):
             if recording_temp_name[j] in intervention_description:
                 recording_temp_name.remove(j)
@@ -197,7 +240,7 @@ def biolink_intervention(response):
         #print(converted_drugs_bern)
         #print(converted_drugs_bern)
         #print(converted_drugs_bern)
-        get_acm_for_bern = acm_Entities(intervention_description)
+        get_acm_for_bern = json.loads(acm_Entities(intervention_description))
 
         #print(acm_Entities(text))
         for i in range(len(get_acm_for_bern['Entities'])):
@@ -221,10 +264,12 @@ def biolink_intervention(response):
                     left_over_found_bern2.append(converted_drugs_bern[i])
                     record_all_converted_temp.append(converted_drugs_bern[i])
         #print(left_over_found_bern2)
+        #print(left_over_found_bern2)
 
         for i in range(len(left_over_found_bern2)):
             if left_over_found_bern2[i] in intervention_description:
                 intervention_description = re.sub(left_over_found_bern2[i], recording_temp_name[i], intervention_description)
+                #print(auto_change[i])
                 #print(intervention_description[23])
                 #record_index_change.append(intervention_description.find((auto_change[i])))
 
@@ -264,171 +309,32 @@ def biolink_intervention(response):
         #print(uncommon(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][0]['InterventionDescription'],new_description))
         #change_dictionary = {'"Bern2Intervention"', '"', new_description, '"'}
         #change_dictionary = "'{%s : %s}'" % ('"Bern2Intervention"', new_description)
-        change_dictionary = {"Bern2Intervention" : new_description}
-        res = change_dictionary
-        #print(change_dictionary)
-        dictaaa.append(res)
-        #print(dictaaa)
-        #result_dictionary.update(json.loads(change_dictionary))
-      #react = "{%s : %s%s%s}" % ('"InterventionByBERN2"', '"', dictaaa, '"')
-      react = {"InterventionByBERN2":dictaaa}
-      return(react)
-    except:
-      react = {"InterventionByBERN2":dictaaa}
-      return(react)
-  
-def convert_to_original(text):
-  #print(record_all_converted_temp)
-  #print(recording_temp_name)
-  list = []
-  list2 = []
-  if len(record_all_converted_temp) > 0:
-    for i in range(len(record_all_converted_temp)):
-        list2 = [record_all_converted_temp[i], recording_temp_name[i]]
-        list.append(list2)
-  return list
-
-def biolink_arm(response):
-    converted_drugs_bern = {}
-    save_acm_part_found = []
-    auto_change = ["aaaaa", "bbbbb", "ccccc", "ddddd", "eeeee", "fffff", "ggggg", 'hhhhh']
-    result_dictionary = {}
-    dictaaa = []
-    change_dictionary = {} 
-    record_index_change = []
-    temp_name_count = 0
-    left_over_found_bern2 = []
-    count = 0
-
-    try:
-      for k in range(len(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['ArmGroupList']['ArmGroup'])):
-        try:
-          intervention_name = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][count]['InterventionName'].lower()
-          #print(intervention_name)
-        except:
-          pass
-        arm_description = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['ArmGroupList']['ArmGroup'][k]['ArmGroupDescription'].lower()
-        #print(arm_description)
-        #original_intervention_description = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][k]['InterventionDescription']
-        #Check all the drug names that can be found in BERN2
-
-        for j in range(len(recording_temp_name)):
-            if recording_temp_name[j] in arm_description:
-                recording_temp_name.remove(j)
-
-
-        if __name__ == '__main__':
-            drug_bern = []
-            #print(query_plain(text))
-            ask = visualize_entities(intervention_name)
-        #print("b")
-        converted_drugs_bern = ask
-        #print(converted_drugs_bern)
-        #print(acm_Entities(arm_description))
-        #print("aa")
-        get_acm_for_bern = acm_Entities(arm_description)
-        #print("a")
-
-        #print(acm_Entities(text))
-        for i in range(len(get_acm_for_bern['Entities'])):
-            try:
-                if get_acm_for_bern['Entities'][i]['Attributes'] != '':
-                    if get_acm_for_bern['Entities'][i]['Type'] == 'GENERIC_NAME':
-                        save_acm_part_found.append(get_acm_for_bern['Entities'][i]['Text'])
-            except:
-                pass
-
-        #print(save_acm_part_found)
-
-        for i in range(len(save_acm_part_found)):
-            intervention_name = re.sub(save_acm_part_found[i], '', intervention_name)
-        intervention_name = intervention_name.lower()
-        #print(intervention_name)
-
-        for i in range(len(converted_drugs_bern)):
-            if converted_drugs_bern[i] in intervention_name:
-                if converted_drugs_bern[i] not in left_over_found_bern2:
-                    left_over_found_bern2.append(converted_drugs_bern[i])
-                    record_all_converted_temp_arm.append(converted_drugs_bern[i])
-        #print(left_over_found_bern2)
-        #print(left_over_found_bern2)
-
-        for i in range(len(left_over_found_bern2)):
-            if left_over_found_bern2[i] in arm_description:
-                arm_description = re.sub(left_over_found_bern2[i], recording_temp_name[i], arm_description)
-                #print(auto_change[i])
-                #print(intervention_description[23])
-                #record_index_change.append(intervention_description.find((auto_change[i])))
-
-
-        parts = arm_description.split(' ')
-        checkcheck = False
-        for i in range(len(parts)):
-            if 'mg' in parts[i]:
-                try:
-                    for j in range(0,5):
-                        if parts[i+j] in recording_temp_name:
-                            parts[j-i] = recording_temp_name[temp_name_count]
-                            new_description = " ".join(parts)
-                        elif parts[i-j] in recording_temp_name:
-                            parts[i-j] = recording_temp_name[temp_name_count]
-                            new_description = " ".join(parts)
-
-                    temp_name_count += 1
-                except:
-                    pass
-
-        if checkcheck == False:
-                new_description = arm_description
-                #for i in range(len(converted_drugs_bern)):
-                    #if auto_change[i] in new_description:
-                        #record_index_change.append(re.search(str(recording_temp_name[i]), new_description))
-                        #new_description = re.sub(auto_change[i], recording_temp_name[i], new_description)
-                temp_name_count += 1
-                        #record_index_change.append(re.search(str(auto_change[i]), str(new_description)))
-                #new_description = re.sub([x for x in auto_change if 'acetaminophen'], 'acetaminophen', new_description)
-
-        new_description = re.sub('\n', "", new_description)
-
-
-        #print(acm_Entities(new_description))
-
-        #print(uncommon(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][0]['InterventionDescription'],new_description))
-        #change_dictionary = {'"Bern2Intervention"', '"', new_description, '"'}
-        #change_dictionary = "'{%s : %s}'" % ('"Bern2Intervention"', new_description)
         change_dictionary = "{%s : %s%s%s}" % ('"Bern2Intervention"', '"', new_description, '"')
         res = json.loads(change_dictionary)
-        #print(res)
         #print(change_dictionary)
         dictaaa.append(res)
         #print(dictaaa)
         #result_dictionary.update(json.loads(change_dictionary))
-      #react = "{%s : %s%s%s}" % ('"InterventionByBERN2"', '"', dictaaa, '"')
-      react = {"InterventionByBERN2":dictaaa}
-      #print(react)
-      #json.loads(react)
-      #result_dictionary.update(json.loads(react))
-      #print(intervention_description[24])
-      #result_dictionary.update(react)
-      #print(record_index_change)
-      count += 1
-      return(react)
+    #react = "{%s : %s%s%s}" % ('"InterventionByBERN2"', '"', dictaaa, '"')
+    react = {"InterventionByBERN2":dictaaa}
+    #print(react)
+    #json.loads(react)
+    #result_dictionary.update(json.loads(react))
+    #print(intervention_description[24])
+    #result_dictionary.update(react)
+    #print(record_index_change)
+    return(react)
+
+
+def acm_Entities(Text):
+    try:
+        url1 = 'http://61.77.42.239:8100/asp/get_entitiesv2/?query=' + Text
+        response = requests.get(url1)
+        a = json.loads(response.content)
+        return a
     except:
-      react = {"InterventionByBERN2":dictaaa}
-      return(react)
-  
-
-def convert_to_original_arm(text):
-  #print(record_all_converted_temp_arm)
-  #print(recording_temp_name)
-  list = []
-  list2 = []
-  if len(record_all_converted_temp_arm) > 0:
-    for i in range(len(record_all_converted_temp_arm)):
-        list2 = [record_all_converted_temp_arm[i], recording_temp_name[i]]
-        list.append(list2)
-  return list
-
+        b = {'Entities' : ''}
+        return b
 
 
 #################################################################################################################################################
@@ -517,17 +423,150 @@ def get_calc_date(response):
     return return_dictionary
 
 
+
+
+
+
+recording_temp_name = ["acetaminophen", "ibuprofen", "acetylcysteine", "adenosine", "albendazole", "albutein"]
+record_all_converted_temp = []
+
+def query_plain(text, url="http://bern2.korea.ac.kr/plain"):
+    result = requests.post(url, json={'text': text}).json()
+    return result
+
+def convert_to_original(text):
+    list = []
+    list2 = []
+    for i in range(len(record_all_converted_temp)):
+        list2 = [record_all_converted_temp[i], recording_temp_name[i]]
+        list.append(list2)
+    return list
+
+def get_BERT2(response):
+    converted_drugs_bern = {}
+    save_acm_part_found = []
+    auto_change = ["aaaaa", "bbbbb", "ccccc", "ddddd", "eeeee", "fffff", "ggggg", 'hhhhh']
+    result_dictionary = {}
+    dictaaa = []
+    change_dictionary = {} 
+    record_index_change = []
+    temp_name_count = 0
+    left_over_found_bern2 = []
+
+    for k in range(len(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'])):
+        intervention_name = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][k]['InterventionName']
+        intervention_description = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][k]['InterventionDescription']
+        original_intervention_description = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][k]['InterventionDescription']
+        #Check all the drug names that can be found in BERN2
+
+        for j in range(len(recording_temp_name)):
+            if recording_temp_name[j] in intervention_description:
+                recording_temp_name.remove(j)
+
+
+        if __name__ == '__main__':
+            drug_bern = []
+            #print(query_plain(text))
+            ask = query_plain(intervention_name)
+
+            for i in range(len(ask["annotations"])):
+                if ask["annotations"][i]["obj"] == "drug":
+                    drug_bern.append(ask["annotations"][i]["mention"])
+
+            converted_drugs_bern = list(dict.fromkeys(drug_bern))
+            #print(converted_drugs_bern) 
+
+        get_acm_for_bern = acm_Entities(intervention_description)
+
+        #print(acm_Entities(text))
+        for i in range(len(get_acm_for_bern['Entities'])):
+            try:
+                if get_acm_for_bern['Entities'][i]['Attributes'] != '':
+                    if get_acm_for_bern['Entities'][i]['Type'] == 'GENERIC_NAME':
+                        save_acm_part_found.append(get_acm_for_bern['Entities'][i]['Text'])
+            except:
+                pass
+
+        #print(save_acm_part_found)
+
+        for i in range(len(save_acm_part_found)):
+            intervention_name = re.sub(save_acm_part_found[i], '', intervention_name)
+
+        #print(intervention_name)
+
+        for i in range(len(converted_drugs_bern)):
+            if converted_drugs_bern[i] in intervention_name:
+                if converted_drugs_bern[i] not in left_over_found_bern2:
+                    left_over_found_bern2.append(converted_drugs_bern[i])
+                    record_all_converted_temp.append(converted_drugs_bern[i])
+        #print(left_over_found_bern2)
+
+        for i in range(len(left_over_found_bern2)):
+            if left_over_found_bern2[i] in intervention_description:
+                intervention_description = re.sub(left_over_found_bern2[i], recording_temp_name[i], intervention_description)
+                #print(auto_change[i])
+                #print(intervention_description[23])
+                #record_index_change.append(intervention_description.find((auto_change[i])))
+
+
+        parts = intervention_description.split(' ')
+        checkcheck = False
+        for i in range(len(parts)):
+            if 'mg' in parts[i]:
+                try:
+                    for j in range(0,5):
+                        if parts[i+j] in recording_temp_name:
+                            parts[j-i] = recording_temp_name[temp_name_count]
+                            new_description = " ".join(parts)
+                        elif parts[i-j] in recording_temp_name:
+                            parts[i-j] = recording_temp_name[temp_name_count]
+                            new_description = " ".join(parts)
+
+                    temp_name_count += 1
+                except:
+                    pass
+
+        if checkcheck == False:
+                new_description = intervention_description
+                #for i in range(len(converted_drugs_bern)):
+                    #if auto_change[i] in new_description:
+                        #record_index_change.append(re.search(str(recording_temp_name[i]), new_description))
+                        #new_description = re.sub(auto_change[i], recording_temp_name[i], new_description)
+                temp_name_count += 1
+                        #record_index_change.append(re.search(str(auto_change[i]), str(new_description)))
+                #new_description = re.sub([x for x in auto_change if 'acetaminophen'], 'acetaminophen', new_description)
+
+        new_description = re.sub('\n', "", new_description)
+
+
+        #print(acm_Entities(new_description))
+
+        #print(uncommon(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['InterventionList']['Intervention'][0]['InterventionDescription'],new_description))
+        #change_dictionary = {'"Bern2Intervention"', '"', new_description, '"'}
+        #change_dictionary = "'{%s : %s}'" % ('"Bern2Intervention"', new_description)
+        change_dictionary = "{%s : %s%s%s}" % ('"Bern2Intervention"', '"', new_description, '"')
+        res = json.loads(change_dictionary)
+        #print(change_dictionary)
+        dictaaa.append(res)
+        #print(dictaaa)
+        #result_dictionary.update(json.loads(change_dictionary))
+    #react = "{%s : %s%s%s}" % ('"InterventionByBERN2"', '"', dictaaa, '"')
+    react = {"InterventionByBERN2":dictaaa}
+    #print(react)
+    #json.loads(react)
+    #result_dictionary.update(json.loads(react))
+    #print(intervention_description[24])
+    #result_dictionary.update(react)
+    #print(record_index_change)
+    return(react)
 #################################################################################################################################################
 #################################################################################################################################################
 #################################################################################################################################################
 def get_drug_time(response):
     
 
-    drugs = biolink_intervention(response)
+    drugs = get_BERT2(response)
     change_inter = (convert_to_original(drugs))
-
-    drugs_arm = biolink_arm(response)
-    change_inter = (convert_to_original(drugs_arm))
 
     protocolsection = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']
 
@@ -550,7 +589,7 @@ def get_drug_time(response):
     drug = []
     time_label = ['day','days','week','weeks','month','months','year','years']
     time_label2 = ['day','week','month','year']
-    amount = ['mg','g ', 'mcg', 'milligram','gm','g/m2','micro-gram','ml']
+    amount = ['mg','g ', 'mcg', 'milligram','gm','g/m2','micro-gram']
     eat_way = ['oral','po']
     
     
@@ -664,15 +703,12 @@ def get_drug_time(response):
  #결론적으로는 Key값 바탕으로 Value 값으로 약물명을 추가하기 때문에, 이때 추가할때 동시에 다른 이름까지넣으면 될 것 같음.
  ######################################################################################## 
     for i1 in range(len(slpit)):     #시간 관련된 내용
-        temp = slpit[i1].lower().split()
+        temp = slpit[i1].split()
         # print(temp)
         for i2 in range(len(drug)):
-            #print(drug[i2],"----------------------------", slpit[i1])
-            if drug[i2] in slpit[i1].lower() or drug[i2] + ' ' in slpit[i1].lower():
+            if drug[i2] in slpit[i1] or drug[i2] + ' ' in slpit[i1]:
                 #print(temp)
-                
                 try:
-                    #print(drug[i2], slpit[i1].lower())
                     drug_index = temp.index(drug[i2].split()[0])
                     for i5 in range(len(time_label)):
                         for i3 in range(drug_index-1, -1, -1):
@@ -718,8 +754,7 @@ def get_drug_time(response):
                 except:
                     pass
                 
-            elif drug[i2].lower() in slpit[i1].lower() or drug[i2].lower() + ' ' in slpit[i1].lower() :
-                
+            elif drug[i2].lower() + ' ' in slpit[i1] :
                 try:                
                     drug_index = temp.index(drug[i2].split()[0].lower())
                     for i5 in range(len(time_label)):
@@ -766,7 +801,33 @@ def get_drug_time(response):
                 except:
                     pass
     #print(drug_dict)
+#################################################################################
+#밑에 코드는 queue써서 ArmgroupDescription쪽에서 기간관련 내용 찾는 코드(폐기각)#
+#################################################################################
 
+##########################################################################
+#밑에 코드는 queue써서 intervention쪽에서 기간관련 내용 찾는 코드(폐기각)#
+##########################################################################
+
+    # protocolsection = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']
+
+    # for value in protocolsection['ArmsInterventionsModule']['InterventionList']['Intervention']:
+    #     value_line = value['InterventionDescription'].split('. ')
+    #     for line in value_line:
+    #         temp = line.split()
+    #         for i2 in drug_dict:
+    #             for i1 in range(len(temp)):
+    #                 if (temp[i1] in i2):
+    #                     dosage_que.put(temp[i1])
+    #                 for i3 in amount:
+    #                     if i3 in temp[i1]:
+    #                         dosage_que.put( temp[i1-1] + temp[i1])
+    # for i in range(dosage_que.qsize()):
+    #     print(dosage_que.get())
+
+######################################################################
+#밑에 코드는 comprehend써서 intervention쪽에서 복용량, 기간 찾는 코드#
+######################################################################
     #comprehend = boto3.client('comprehend')
 
     
@@ -779,7 +840,6 @@ def get_drug_time(response):
                     test = (comprehend.detect_entities(Text=DetectEntitiestext, LanguageCode='en'))
                     for i2 in range(len(test['Entities'])):
                         if(test['Entities'][i2]['Type'] == "QUANTITY"):
-                            #print(i,test['Entities'][i2]['Text'].lower())
                             for k in range(len(amount)):
                                 if (amount[k] in test['Entities'][i2]['Text'].lower()):
                                     drug_dict[i.lower()]['Dosage'] = test['Entities'][i2]['Text']
@@ -824,8 +884,30 @@ def get_drug_time(response):
                 except KeyError:
                     pass
 
+########################################################################################
+#밑에 코드는 ACM이랑 bern2로 약물명 고쳐서 쓰는 코드#
+########################################################################################
+    for text in drugs['InterventionByBERN2']:
+        DetectEntitiestext = text['Bern2Intervention']
+        test = acm_Entities(DetectEntitiestext)
 
+        for i in drug_dict:            
+            for change in change_inter:
+                for i2 in range(len(test['Entities'])):
+                    if test['Entities'][i2]['Text'].lower() == change[1]:
+                        if change[0] in i.lower():
+                            try:
+                                for i3 in range(len(test['Entities'][i2]['Attributes'])):
+                                    if test['Entities'][i2]['Attributes'][i3]['Type'] == "ROUTE_OR_MODE":
+                                        drug_dict[i.lower()]['HowToTake'] = test['Entities'][i2]['Attributes'][i3]['Text'] 
+                                    elif test['Entities'][i2]['Attributes'][i3]['Type'] == "DURATION":
+                                        drug_dict[i.lower()]['Duration'] = test['Entities'][i2]['Attributes'][i3]['Text']
+                                    elif test['Entities'][i2]['Attributes'][i3]['Type'] == "DOSAGE" or test['Entities'][i2]['Attributes'][i3]['Type'] == "STRENGTH":
+                                        drug_dict[i.lower()]['Dosage'] = test['Entities'][i2]['Attributes'][i3]['Text']
+                            except KeyError:
+                                pass
 
+    #print(drug_dict)
 ########################################################################################
 #밑에 코드는 ACM써서 인터벤션 디스크립션 부분에서 약물 복용법, 복용 주기 관련 내용 추출#
 ########################################################################################
@@ -891,31 +973,6 @@ def get_drug_time(response):
                     pass
 
 ########################################################################################
-#밑에 코드는 ACM이랑 BioLinkBert로 약물명 고쳐서 쓰는 코드 at intervention Description요#
-########################################################################################
-
-    for text in drugs['InterventionByBERN2']:
-        DetectEntitiestext = text['Bern2Intervention']
-        test = acm_Entities(DetectEntitiestext)
-        for i in drug_dict:            
-            for change in change_inter:
-                for i2 in range(len(test['Entities'])):
-                    if test['Entities'][i2]['Text'].lower() == change[1]:
-                        if change[0] in i.lower():
-                            try:
-                                for i3 in range(len(test['Entities'][i2]['Attributes'])):
-                                    if test['Entities'][i2]['Attributes'][i3]['Type'] == "ROUTE_OR_MODE":
-                                        drug_dict[i.lower()]['HowToTake'] = test['Entities'][i2]['Attributes'][i3]['Text'] 
-                                    elif test['Entities'][i2]['Attributes'][i3]['Type'] == "DURATION":
-                                        drug_dict[i.lower()]['Duration'] = test['Entities'][i2]['Attributes'][i3]['Text']
-                                    elif test['Entities'][i2]['Attributes'][i3]['Type'] == "DOSAGE" or test['Entities'][i2]['Attributes'][i3]['Type'] == "STRENGTH":
-                                        drug_dict[i.lower()]['Dosage'] = test['Entities'][i2]['Attributes'][i3]['Text']
-                            except KeyError:
-                                pass
-
-    #print(drug_dict)
-
-########################################################################################
 #밑에 코드는 ACM써서 ArmGroupdescription 부분에서 약물 복용법, 복용 주기 관련 내용 추출#
 ########################################################################################
     for value in protocolsection['ArmsInterventionsModule']['ArmGroupList']['ArmGroup']:
@@ -927,7 +984,7 @@ def get_drug_time(response):
                     if test['Entities'][i2]['Text'].lower() in i:
                         try:
                             for i3 in range(len(test['Entities'][i2]['Attributes'])):
-                                if test['Entities'][i2]['Attributes'][i3]['Type'] == "DOSAGE" or test['Entities'][i2]['Attributes'][i3]['Type'] == "STRENGTH":
+                                if test['Entities'][i2]['Attributes'][i3]['Type'] == "DOSAGE":
                                     drug_dict[i.lower()]['Dosage'] = test['Entities'][i2]['Attributes'][i3]['Text']
                             
                                     break
@@ -935,45 +992,12 @@ def get_drug_time(response):
                                 if test['Entities'][i2]['Attributes'][i3]['Type'] == "DURATION":
                                     drug_dict[i.lower()]['Duration'] = test['Entities'][i2]['Attributes'][i3]['Text']
                                     break
-                            for i3 in range(len(test['Entities'][i2]['Attributes'])): 
-                                if test['Entities'][i2]['Attributes'][i3]['Type'] == "ROUTE_OR_MODE":
-                                    drug_dict[i.lower()]['HowToTake'] = test['Entities'][i2]['Attributes'][i3]['Text']
-                                    break 
                         except KeyError:
                             pass                    
 
                 #print(json.dumps(test,sort_keys=True, indent=4)) 
         except KeyError:
             pass    
-########################################################################################
-#밑에 코드는 ACM이랑 BioLinkBert로 ArmGroupdescription 부분에서 약물명 고쳐서 쓰는 코드 at intervention Description요#
-########################################################################################
-    # print(drugs_arm['InterventionByBERN2'])
-
-    for text in drugs_arm['InterventionByBERN2']:
-        DetectEntitiestext = text['Bern2Intervention']
-        test = acm_Entities(DetectEntitiestext)
-        # print(test)
-
-        for i in drug_dict:            
-            for change in change_inter:
-                for i2 in range(len(test['Entities'])):
-                    if test['Entities'][i2]['Text'].lower() == change[1]:
-                        if change[0] in i.lower():
-                            try:
-                                for i3 in range(len(test['Entities'][i2]['Attributes'])):
-                                    if test['Entities'][i2]['Attributes'][i3]['Type'] == "ROUTE_OR_MODE":
-                                        drug_dict[i.lower()]['HowToTake'] = test['Entities'][i2]['Attributes'][i3]['Text'] 
-                                    elif test['Entities'][i2]['Attributes'][i3]['Type'] == "DURATION":
-                                        drug_dict[i.lower()]['Duration'] = test['Entities'][i2]['Attributes'][i3]['Text']
-                                    elif test['Entities'][i2]['Attributes'][i3]['Type'] == "DOSAGE" or test['Entities'][i2]['Attributes'][i3]['Type'] == "STRENGTH":
-                                        drug_dict[i.lower()]['Dosage'] = test['Entities'][i2]['Attributes'][i3]['Text']
-                                for i3 in range(len(test['Entities'][i2]['Attributes'])):
-                                    if test['Entities'][i2]['Attributes'][i3]['Type'] == "FREQUENCY":
-                                        drug_dict[i.lower()]['Duration'] = drug_dict[i.lower()]['Duration'] + '(' + test['Entities'][i2]['Attributes'][i3]['Text'] + ')'                                   
-                            except KeyError:
-                                pass
-
 
 #################################################################################################
 #밑에 코드는 ACM써서 디스크립션 부분에서 약물 복용 주기 내용 찾는 코드(무조건 마지막에 나와야함)#
@@ -1075,9 +1099,9 @@ def get_drug_time(response):
 
     return_dictionary = {"DrugInformation" : InterventionDrug}
     #print(json.dumps(return_dictionary,sort_keys=True, indent=4))
-######################################################################################################
+#################################################################################################
 #밑에 코드는 ACM써서 ARm 디스크립션 부분에서 약물 복용 주기 내용 찾는 코드(유사한 내용 바탕으로 실시)#
-######################################################################################################
+#################################################################################################
 
     for value1 in return_dictionary['DrugInformation']['ArmGroupList']:
         medi_loc = 0
@@ -1150,7 +1174,9 @@ def get_drug_time(response):
                             except KeyError:
                                 pass                    
             except KeyError:
-                pass
+                pass        
+
+        
 
     for value1 in return_dictionary['DrugInformation']['ArmGroupList']:
         medi_loc = 0
@@ -1158,8 +1184,11 @@ def get_drug_time(response):
         abs_s = 100
         dosa = ""
         DetectEntitiestext = value1['ArmGroupLabel']
+        # print(DetectEntitiestext)
         result = acm_Entities(DetectEntitiestext)
         result2 = comprehend.detect_entities(Text=DetectEntitiestext, LanguageCode='en')
+        # print(json.dumps(result,sort_keys=True, indent=4))
+        #print(json.dumps(result2,sort_keys=True, indent=4))
         entities = result['Entities']
         entities2 =  result2['Entities']
         for value in entities:
@@ -1190,8 +1219,6 @@ def get_drug_time(response):
                             value1['InterventionDescription'].append({"Dosage" : dosa, "DrugName" : value1['InterventionDescription'][i]["DrugName"], "Duration" : value1['InterventionDescription'][i]["Duration"], "HowToTake" : value1['InterventionDescription'][i]["HowToTake"], "OtherName" : value1["InterventionDescription"][i]["OtherName"]})
                             del value1['InterventionDescription'][i]
         # for value2 in value1['InterventionDescription']:
-    
-
 
 
     return return_dictionary
@@ -1213,8 +1240,8 @@ def get_population_ratio(response):
     #get the total participates number
     #total = int(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['EnrollmentInfo']['EnrollmentCount'])
     #save_total = int(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DesignModule']['EnrollmentInfo']['EnrollmentCount'])
-    #get the detail of each arm group
 
+    #get the detail of each arm group
     try:
         for i in range(len(response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']["ArmGroupList"]["ArmGroup"])):
             findPopulation = ''.join([str(item) for item in response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['ArmsInterventionsModule']['ArmGroupList']['ArmGroup'][i]['ArmGroupDescription']])
@@ -1246,18 +1273,6 @@ def get_population_ratio(response):
             
     except:
         population_list.append("")
-
-    if rateString == '':
-        try:
-            DetailedDescription = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['DescriptionModule']['DetailedDescription'].split()
-            for i in range(len(DetailedDescription)):
-                if "ratio" in DetailedDescription[i]:
-                    if ":" in DetailedDescription[i-1]:
-                        rateString = DetailedDescription[i-1]
-                    elif ":" in DetailedDescription[i+1]:
-                        rateString = DetailedDescription[i+1]
-        except:
-            pass
 
 
     return_population_ratio_dictionary = {"PopulationRatio" : rateString}
@@ -1350,8 +1365,8 @@ def get_washout(response):
     #comprehend = boto3.client('comprehend') #주석 하기!!
     DetectEntitiestext = line
     test = (comprehend.detect_entities(Text=DetectEntitiestext, LanguageCode='en'))
-    # convert = json.dumps(test,sort_keys=True, indent=4)
-    # data = json.loads(convert)
+    convert = json.dumps(test,sort_keys=True, indent=4)
+    data = json.loads(convert)
 
     # Quantitiy 안에 times 있는지 있으면 뽑기
     for i in range(len(test['Entities'])):
@@ -1568,7 +1583,6 @@ def request_call(url):
 
         if getStudyType(response) == "Observational":
                     return "It is observational"
-
         #dictionary format
         calc_date, population_ratio, official_title, objective, allocation, enrollment, design_model, masking, intervention_name, title = get_calc_date(response), get_population_ratio(response), get_officialTitle(response), get_objective(response), get_allocation(response), get_enrollment(response), get_designModel(response), get_maksing(response), get_interventionName(response), get_title(response)
 
@@ -1599,6 +1613,22 @@ def request_call(url):
                 json.dump(request_call, json_file,sort_keys=True, indent=4)
 
         return request_call
+
+
+# ## example ##
+# #url = input()
+# #url = "https://www.clinicaltrials.gov/ct2/show/NCT00482833"
+# url ="https://www.clinicaltrials.gov/ct2/show/NCT02374567"
+# #url = "https://www.clinicaltrials.gov/api/query/full_studies?expr=Alleviating+Stress+by+Mobile+Application%27+for+Depression+%28ASMA-D%29&min_rnk=1&max_rnk=&fmt=json"
+# # url = 'https://www.clinicaltrials.gov/api/query/full_studies?expr=A+Study+to+Evaluate+the+Safety+and+Efficacy+of+CT1812+in+Subjects+With+Mild+to+Moderate+Alzheimer%27s+Disease.&min_rnk=1&max_rnk=&fmt=json'
+# # #url = "https://www.clinicaltrials.gov/ct2/show/NCT00501696?term=crossover&draw=2&rank=7"
+# # url = "https://www.clinicaltrials.gov/api/query/full_studies?expr=A+Study+to+Evaluate+the+Safety+and+Efficacy+of+CT1812+in+Subjects+With+Mild+to+Moderate+Alzheimer%27s+Disease.&min_rnk=1&max_rnk=&fmt=json"
+# # #url = 'https://www.clinicaltrials.gov/api/query/full_studies?expr=Does+BRV+Have+Faster+Onset+Time+%26+Greater+Effect+Than+LEV+in+Epilepsy+Pts+Using+PPR+Pharmacodynamic+Efficacy+Endpoint&min_rnk=1&max_rnk=&fmt=json'
+# # #url = "https://clinicaltrials.gov/ct2/show/NCT05469178"
+# # url = "https://clinicaltrials.gov/ct2/show/NCT05469178"
+# url ="https://www.clinicaltrials.gov/api/query/full_studies?expr=Efficacy+and+Safety+of+Drug+Combination+Therapy+of+Isotretinoin+and+Some+Antifungal+Drugs+as+A+Potential+Aerosol+Therapy+for+COVID-19+%3A+An+Innovative+Therapeutic+Approach+COVID-19+%28Isotretinoin%29&min_rnk=1&max_rnk=1&fmt=json"
+
+# print(request_call(url))
 
 if __name__ == "__main__":
     # sys.argv[1]은 url임
@@ -1648,7 +1678,7 @@ if __name__ == "__main__":
 
     try:
         ##Loading or Opening the json file
-        with open("./NCT_ID_database/"+file_name) as file:
+        with open("./NCT_ID_database_bio/"+file_name) as file:
             file_data = json.load(file)
 
         if isinstance(file_data, list):

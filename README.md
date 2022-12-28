@@ -1,4 +1,4 @@
-# 임상시험 설계 모식도 자동생성 및 시각화_Backend
+# Backend
 > 입력받은 글로벌 임상시험(ClinicalTrials.gov) URL에서 PICOT 기반의 의미있는 정보를 추출하여 이를 모식도로 시각화하는 웹 어플리케이션입니다.    
 추출된 정보가 정확한지 확인할 수 있도록 글로벌 임상시험 URL의 원문을 함께 보여주며, 내용 혹은 모식도의 모양을 수정할 수 있는 기능을 제공합니다. 모식도의 글자를 클릭하면 해당 내용이 적힌 원문으로 이동하고, 최근에 검색했던 모식도 기록을 보여주는 기능 또한 제공합니다.
 
@@ -10,11 +10,11 @@ $ cd backend
 ```
 ### How to Run
 #### 1. Installation:
+python 버전은 3.8이상이어야 한다.
 ```
-$ npm init
 $ npm install
 $ python -m pip install -U pip
-$ pip install -r requirements.txt
+$ pip install -r modules.txt
 ```
 #### 2. secrets.json 최상단에 가져오기    
 해당 파일 안에는 다음의 내용들이 있다.
@@ -41,7 +41,14 @@ module.exports = {
 };
 ```
 
-#### 4. To run Express
+#### 4. 파이썬 경로 설정: index.js 18,19번째 줄
+```
+let pythonPathBio = '(사용자의 파이썬 경로)';
+let pythonPathACM = '(사용자의 파이썬 경로)';
+```
+
+#### 5. To run Express
+node version: v16.15.1
 ```
 npm start
 ```
@@ -53,11 +60,14 @@ npm start
 ├── config/
 |   ├── dev.js
 |   ├── key.js
-|   ├── prod.js
+|   └── prod.js
 ├── NCT_ID_database_acm/
 |   └── ...
 ├── NCT_ID_database_bio
 |   └── ...
+├── searchHistory
+|   ├── img-nct.txt
+|   └── img-url.txt
 ├── .gitignore
 ├── crawling.py
 ├── data_extract_ACM.py
@@ -74,8 +84,9 @@ npm start
 - crawling.py : ClinicalTrials의 임상시험 원문을 가져옴
 - data_extract_ACM.py : ACM api와 ClinicalTrials api로 정보를 추출, json형태로 내보냄
 - data_extract_Biolinkbert.py : ACM api와 ClinicalTrials api와 Biolinkbert api로 정보를 추출, json형태로 내보냄
-- img-url.txt와 img-nct.txt: 모식도 생성시 만들어지는 모식도 이미지와 임상시험번호 기록
-- index.js : 모든 API
+- searchHistory(img-url.txt & img-nct.txt): 모식도 생성시 만들어지는 모식도 이미지와 임상시험번호 기록을 저장
+- index.js : 모든 API Call들을 관리.  
+  - 실시간으로 정보를 추출, DB에 있는 원본/편집본 정보 가져오기, 검색 기록 가져오기, 임상시험설계 원문 크롤링하는 라우터를 관리
 - modules.txt : 정보추출 코드를 실행시키는 데 필요한 모듈들
 - secrets.json : AWS 사용에 필요한, 노출되면 안 되는 값들을 저장
 ----------------------------------------------------------
@@ -112,10 +123,10 @@ Request 데이터 예시
 데이터베이스 접근 방법
 http://3.35.243.113:5000 + _id(JSON에 존재하는 데이터베이스 번호)
 - JSON 형태 예시에 대해서는 아래 **1) url + '/api’ [POST]** 참조
+---
+# API Call 
+url = http://3.35.243.113:5000 # 3.35.243.113 대신 사용자의 IP를 작성하면 됨
 
-## API Call 
-url = http://3.35.243.113:5000
- 
 ### 1) url + '/api’ [POST]
 전달받은 임상시험설계 url에서 임상시험번호(NCTID)를 추출하고, 이를 이용해 ClinicalTrials api에 접근
 #### Request 예시
@@ -207,7 +218,7 @@ url = http://3.35.243.113:5000
 ```
 { “message”: “Good” }
 ```
-### 5) url + `/crawling`, body [POST]
+### 5) url + '/crawling' [POST]
 임상시험 원문 내용 태그들을 추출하여 전달
 
 #### Request 예시
@@ -225,6 +236,7 @@ url = http://3.35.243.113:5000
 { (생성된 모식도 이미지의 경로), (임상시험설계번호) }
 ```
 
+<<<<<<< HEAD
 ### 사용하는 API 추가 설명
 - **개체명 인식기 API** : 약물명 등 다양한 엔티티 감지
 	ACM (Amazon Comprehend Medical) API
@@ -301,3 +313,5 @@ def visualize_entities(sentence):
 
 Token Combine 결과: Mercaptopurine
 
+=======
+>>>>>>> 6da203bdba8cd9b5e9aa67aef32fe92b160ff478
