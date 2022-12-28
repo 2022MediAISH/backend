@@ -10,8 +10,8 @@ $ cd backend
 ```
 ### How to Run
 #### 1. Installation:
+python 버전은 3.8이상이어야 한다.
 ```
-$ npm init
 $ npm install
 $ python -m pip install -U pip
 $ pip install -r modules.txt
@@ -48,6 +48,7 @@ let pythonPathACM = '(사용자의 파이썬 경로)';
 ```
 
 #### 5. To run Express
+node version: v16.15.1
 ```
 npm start
 ```
@@ -83,7 +84,7 @@ npm start
 - crawling.py : ClinicalTrials의 임상시험 원문을 가져옴
 - data_extract_ACM.py : ACM api와 ClinicalTrials api로 정보를 추출, json형태로 내보냄
 - data_extract_Biolinkbert.py : ACM api와 ClinicalTrials api와 Biolinkbert api로 정보를 추출, json형태로 내보냄
-- img-url.txt와 img-nct.txt: 모식도 생성시 만들어지는 모식도 이미지와 임상시험번호 기록
+- searchHistory(img-url.txt & img-nct.txt): 모식도 생성시 만들어지는 모식도 이미지와 임상시험번호 기록을 저장
 - index.js : 모든 API Call들을 관리.  
   - 실시간으로 정보를 추출, DB에 있는 원본/편집본 정보 가져오기, 검색 기록 가져오기, 임상시험설계 원문 크롤링하는 라우터를 관리
 - modules.txt : 정보추출 코드를 실행시키는 데 필요한 모듈들
@@ -124,8 +125,8 @@ http://3.35.243.113:5000 + _id(JSON에 존재하는 데이터베이스 번호)
 - JSON 형태 예시에 대해서는 아래 **1) url + '/api’ [POST]** 참조
 ---
 # API Call 
-url = http://3.35.243.113:5000
- 
+url = http://3.35.243.113:5000 # 3.35.243.113 대신 사용자의 IP를 작성하면 됨
+
 ### 1) url + '/api’ [POST]
 전달받은 임상시험설계 url에서 임상시험번호(NCTID)를 추출하고, 이를 이용해 ClinicalTrials api에 접근
 #### Request 예시
