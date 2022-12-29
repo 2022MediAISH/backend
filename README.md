@@ -127,8 +127,8 @@ http://3.35.243.113:5000 + _id(JSON에 존재하는 데이터베이스 번호)
 # API Call 
 url = http://3.35.243.113:5000 # 3.35.243.113 대신 사용자의 IP를 작성하면 됨
 
-### 1) url + '/api’ [POST]
-전달받은 임상시험설계 url에서 임상시험번호(NCTID)를 추출하고, 이를 이용해 ClinicalTrials api에 접근
+### 1) url + '/api/biolink/:id’ [GET]          url + '/api/acm/:id’ [GET]
+전달받은 임상시험설계 url에서 임상시험번호(NCTID)를 추출하고, 선택된 api와 NCTID를 통하여 정보 추출
 #### Request 예시
 ```
 { url: (ClinicalTrials.gov의 임상시험설계번호) }
@@ -192,10 +192,11 @@ url = http://3.35.243.113:5000 # 3.35.243.113 대신 사용자의 IP를 작성�
     "version": "(정보추출API의 버전 [String])"
 }
 ```
-### 2) url + '/load’ [POST]
+### 2) url + '/load/:id’ [GET]
 전달받은 임상시험설계번호(NCTID)로 편집본을 저장하고 있는 데이터베이스 검색함
 존재한다면 데이터베이스에서 원본 정보(json)를 반환하고, 
-없다면 아무일도 하지 않음
+없다면 아무일도 하지 않음.
+편집은 biolinkbert + acm만 가능하기 때문에 acm은 편집본 불러오기 기능은 
 #### Request 예시
 ```
 {url: (ClinicalTrials.gov의 임상시험설계번호)}
@@ -225,7 +226,7 @@ url = http://3.35.243.113:5000 # 3.35.243.113 대신 사용자의 IP를 작성�
 ```
 { “message”: “Good” }
 ```
-### 5) url + '/crawling' [POST]
+### 5) url + '/crawling/:id' [GET]
 임상시험 원문 내용 태그들을 추출하여 전달
 
 #### Request 예시
