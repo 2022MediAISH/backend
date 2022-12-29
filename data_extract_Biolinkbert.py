@@ -1543,7 +1543,7 @@ def request_call(url):
         NCTId = response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']
 
         script_dir = os.path.dirname(__file__)
-        file_path = os.path.join(script_dir, f'NCT_ID_database/{NCTId}.json')
+        file_path = os.path.join(script_dir, f'NCT_ID_database_bio/{NCTId}.json')
 
         with open(file_path) as json_file:
             data = json.load(json_file)
@@ -1598,7 +1598,7 @@ def request_call(url):
 
         #print(request_call['population_ratio'])
         script_dir = os.path.dirname(__file__)
-        file_path = os.path.join(script_dir, f"NCT_ID_database/{response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']}.json")
+        file_path = os.path.join(script_dir, f"NCT_ID_database_bio/{response['FullStudiesResponse']['FullStudies'][0]['Study']['ProtocolSection']['IdentificationModule']['NCTId']}.json")
         with open(file_path, 'w') as json_file:
                 json.dump(request_call, json_file,sort_keys=True, indent=4)
 
