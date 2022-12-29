@@ -15,8 +15,8 @@ const DATABASE_NAME = "testdb";
 let database, collection;
 
 // python 경로 설정
-let pythonPathBio = '/home/jun/practice/ReactPrac/nodeJSBackend/venv/bin/python';
-let pythonPathACM = '/home/jun/practice/ReactPrac/nodeJSBackend/venv/bin/python';
+const pythonPathBio = '/home/ubuntu/22SH/2ndIntegration/backend/venPy8/bin/python';
+const pythonPathACM = '/home/ubuntu/22SH/2ndIntegration/backend/venv/bin/python3.6';
 
 app.use(express.json({
   limit: '200kb'
@@ -328,7 +328,7 @@ app.get("/img", async (req, res) => {
 app.get("/crawling/:id", async (req, res) => {
   const { id } = req.params; // id가 nctID임
   let getResult;
-  const result = spawn("python", ['crawling.py', id]);
+  const result = spawn(pythonPathACM, ['crawling.py', id]);
   result.stdout.on('data', function (data) {
     getResult = data.toString();
     res.send(getResult);
