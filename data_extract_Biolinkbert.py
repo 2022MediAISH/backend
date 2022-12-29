@@ -3,16 +3,6 @@ import requests
 import re
 import boto3
 import json
-#pip install sumy
-# Importing the parser and tokenizer
-from sumy.parsers.plaintext import PlaintextParser
-from sumy.nlp.tokenizers import Tokenizer
-# Import the LexRank summarizer
-from sumy.summarizers.lex_rank import LexRankSummarizer
-#pip install nltk
-import nltk
-#download only once 
-#nltk.download('punkt')
 import math
 import sys
 #multithreading part, no need for extra pip install
@@ -20,7 +10,7 @@ from threading import Thread
 from queue import Queue
 import os, json
 from pathlib import Path
-from django.core.exceptions import ImproperlyConfigured
+# from django.core.exceptions import ImproperlyConfigured
 from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
 ###############################################
 ################## IMPORTANT ##################
@@ -207,7 +197,7 @@ def convert_to_original(text):
 
 tokenizer = AutoTokenizer.from_pretrained("BioLinkBERT-base-finetuned-ner", model_max_length=512)
 model = AutoModelForTokenClassification.from_pretrained("BioLinkBERT-base-finetuned-ner")
-effect_ner_model = pipeline(task="ner", model=model, tokenizer=tokenizer, device=0)
+effect_ner_model = pipeline(task="ner", model=model, tokenizer=tokenizer, device=-1)
 
 
 def get_BERT2(response):
